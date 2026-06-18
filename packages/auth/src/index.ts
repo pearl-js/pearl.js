@@ -10,6 +10,8 @@ export { JwtGuard } from './guards/JwtGuard.js'
 export type { JwtConfig, JwtPayload } from './guards/JwtGuard.js'
 export { ApiTokenGuard } from './guards/ApiTokenGuard.js'
 export type { TokenRecord, TokenStore } from './guards/ApiTokenGuard.js'
+export { SessionGuard } from './guards/SessionGuard.js'
+export type { SessionRecord, SessionStore, SessionConfig } from './guards/SessionGuard.js'
 
 // Middleware
 export { Authenticate, OptionalAuth } from './middleware/Authenticate.js'

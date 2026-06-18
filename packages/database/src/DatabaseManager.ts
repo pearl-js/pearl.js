@@ -40,4 +40,13 @@ export class DatabaseManager {
     connection(): unknown {
         return this.adapter.connection()
     }
+
+    /**
+     * Shorthand for Drizzle users — equivalent to `(adapter as DrizzleAdapter).db`.
+     * Throws if the adapter has not been connected yet.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get db(): any {
+        return this.adapter.connection()
+    }
 }

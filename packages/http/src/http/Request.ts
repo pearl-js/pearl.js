@@ -114,20 +114,38 @@ export class Request {
 
         return new Promise((resolve, reject) => {
         const chunks: Buffer[] = []
-        this.raw.on('data', (chunk: Buffer) => chunks.push(chunk))
-        this.raw.on('error', reject)
-        this.raw.on('end', () => {
+
+        const cleanup = () => {
+            this.raw.removeListener('data',  onData)
+            this.raw.removeListener('error', onError)
+            this.raw.removeListener('end',   onEnd)
+        }
+
+        const fail = (err: Error) => { cleanup(); this.raw.resume(); reject(err) }
+
+        const onData  = (chunk: Buffer) => chunks.push(chunk)
+        const onError = (err: Error)    => fail(err)
+        const onEnd   = () => {
+            cleanup()
             const raw = Buffer.concat(chunks).toString('utf-8')
             if (!raw) return resolve()
 
             if (this.isJson()) {
-            try { this._body = JSON.parse(raw) as ParsedBody } catch { this._body = {} }
+            try { this._body = JSON.parse(raw) as ParsedBody } catch {
+                const err = new Error('Invalid JSON body') as Error & { statusCode: number }
+                err.statusCode = 400
+                return reject(err)
+            }
             } else if (this.contentType.includes('application/x-www-form-urlencoded')) {
             new URLSearchParams(raw).forEach((value, key) => { this._body[key] = value })
             }
 
             resolve()
-        })
+        }
+
+        this.raw.on('data',  onData)
+        this.raw.on('error', onError)
+        this.raw.on('end',   onEnd)
         })
     }
 }

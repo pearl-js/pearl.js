@@ -87,9 +87,16 @@ export class Router {
         if (!match) continue
 
         const params: Record<string, string> = {}
-        route.paramKeys.forEach((key, i) => {
-            params[key] = decodeURIComponent(match[i + 1] ?? '')
-        })
+        let malformed = false
+        for (let i = 0; i < route.paramKeys.length; i++) {
+            try {
+                params[route.paramKeys[i]!] = decodeURIComponent(match[i + 1] ?? '')
+            } catch {
+                malformed = true
+                break
+            }
+        }
+        if (malformed) continue
 
         return { route, params }
         }
@@ -117,21 +124,47 @@ export class Router {
         return this
     }
 
+    /**
+     * Compile a route path pattern into a RegExp.
+     *
+     * Pattern syntax:
+     *   - `:name`  → capture group bound to `name`
+     *   - `*`      → wildcard, captures the rest of the path
+     *   - any other character is matched literally
+     *
+     * NOTE on literal colons: a `:` in a literal segment WILL be treated as the
+     * start of a parameter name (e.g. `/api:v1` is parsed as literal `/api`
+     * followed by param `v1`). If you need a literal colon, prefix it with a
+     * backslash: `/api\:v1`.
+     */
     private compilePath(path: string): { regex: RegExp; paramKeys: string[] } {
         const paramKeys: string[] = []
+        const ESCAPED_COLON = '\x00COLON\x00'
 
-        // Replace :param with named capture group
-        const pattern = path
-        .replace(/[.*+?^${}()|[\]\\]/g, (c) => (c === ':' ? c : `\\${c}`))
-        .replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_match, key: string) => {
+        // 1. Honor user-escaped `\:` — swap for a placeholder so it survives
+        //    parameter extraction and regex escaping.
+        let working = path.replace(/\\:/g, ESCAPED_COLON)
+
+        // 2. Extract `:name` parameters and replace with a placeholder that
+        //    won't be touched by regex-special escaping.
+        const PARAM_TOKEN = '\x00PARAM\x00'
+        working = working.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_m, key: string) => {
             paramKeys.push(key)
-            return '([^/]+)'
+            return PARAM_TOKEN
         })
-        .replace(/\\\*/g, '(.*)')
+
+        // 3. Escape all remaining regex special characters in literal segments.
+        working = working.replace(/[.*+?^${}()|[\]\\]/g, (c) => `\\${c}`)
+
+        // 4. Restore placeholders to their regex equivalents.
+        const pattern = working
+            .replace(/\\\*/g, '(.*)')
+            .replaceAll(PARAM_TOKEN, '([^/]+)')
+            .replaceAll(ESCAPED_COLON, ':')
 
         return {
-        regex: new RegExp(`^${pattern}$`),
-        paramKeys,
+            regex: new RegExp(`^${pattern}$`),
+            paramKeys,
         }
     }
 }
