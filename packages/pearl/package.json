@@ -15,7 +15,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepare": "pnpm run build",
     "prepublishOnly": "tsc"
   },
   "dependencies": {
