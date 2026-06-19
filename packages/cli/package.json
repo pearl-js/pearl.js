@@ -1,6 +1,6 @@
 {
   "name": "@pearl-framework/cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI for the Pearl.js TypeScript framework",
   "type": "module",
   "keywords": [
@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run build",
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
     "chalk": "^5.3.0",
@@ -45,5 +46,9 @@
     "type": "git",
     "url": "https://github.com/skd09/pearl.js.git",
     "directory": "packages/cli"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

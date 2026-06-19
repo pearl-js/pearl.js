@@ -130,24 +130,114 @@ export { env }
 /**
  * Loads .env file into process.env (Pearl's built-in dotenv).
  * Called at the very start of the boot sequence.
+ *
+ * Supports:
+ *   - Comments (`#`) at start of line or trailing (only for unquoted values).
+ *   - Double-quoted values with `\n`, `\r`, `\t`, `\\`, `\"` escapes.
+ *   - Single-quoted values (literal, no escape processing).
+ *   - Multi-line values inside matching quotes.
+ *   - `export KEY=value` prefix (ignored).
+ *   - Equals signs inside values (only the first `=` is the separator).
  */
 export function loadDotenv(appRoot: string): void {
   const envPath = join(appRoot, '.env')
   if (!existsSync(envPath)) return
 
-  const contents = readFileSync(envPath, 'utf-8')
-  for (const line of contents.split('\n')) {
-    const trimmed = line.trim()
-    if (trimmed === '' || trimmed.startsWith('#')) continue
+  const parsed = parseDotenv(readFileSync(envPath, 'utf-8'))
+  for (const [key, value] of Object.entries(parsed)) {
+    // Never overwrite existing env vars (real env takes precedence)
+    process.env[key] ??= value
+  }
+}
 
-    const eqIndex = trimmed.indexOf('=')
+/**
+ * Parse `.env` file contents into a plain object. Exported so tests and
+ * tooling can reuse the parser without touching `process.env`.
+ */
+export function parseDotenv(source: string): Record<string, string> {
+  const result: Record<string, string> = {}
+  const lines = source.split(/\r?\n/)
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i] ?? ''
+    const trimmedStart = line.replace(/^\s+/, '')
+
+    if (trimmedStart === '' || trimmedStart.startsWith('#')) continue
+
+    line = trimmedStart.replace(/^export\s+/, '')
+
+    const eqIndex = line.indexOf('=')
     if (eqIndex === -1) continue
 
-    const key = trimmed.slice(0, eqIndex).trim()
-    const raw = trimmed.slice(eqIndex + 1).trim()
-    const value = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw
+    const key = line.slice(0, eqIndex).trim()
+    if (!isValidEnvKey(key)) continue
 
-    // Never overwrite existing env vars (allows real env to take precedence)
-    process.env[key] ??= value
+    let rest = line.slice(eqIndex + 1)
+    // Leading whitespace before the value is ignored
+    rest = rest.replace(/^\s+/, '')
+
+    const first = rest[0]
+    if (first === '"' || first === "'") {
+      const { value, nextLine } = readQuoted(lines, i, rest, first)
+      result[key] = value
+      i = nextLine
+    } else {
+      // Unquoted: strip trailing comment + whitespace
+      const hashIndex = rest.indexOf(' #')
+      const raw = (hashIndex === -1 ? rest : rest.slice(0, hashIndex)).trim()
+      result[key] = raw
+    }
+  }
+
+  return result
+}
+
+function isValidEnvKey(key: string): boolean {
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(key)
+}
+
+function readQuoted(
+  lines: string[],
+  startLine: number,
+  firstSegment: string,
+  quote: string,
+): { value: string; nextLine: number } {
+  // Walk the remainder of `firstSegment` (which starts with the opening quote)
+  // and subsequent lines until we find the matching unescaped closing quote.
+  const supportsEscapes = quote === '"'
+  let buf = ''
+  let line = startLine
+  let segment = firstSegment.slice(1) // drop opening quote
+
+  while (true) {
+    let i = 0
+    while (i < segment.length) {
+      const ch = segment[i]
+      if (supportsEscapes && ch === '\\' && i + 1 < segment.length) {
+        const next = segment[i + 1]
+        if (next === 'n') buf += '\n'
+        else if (next === 'r') buf += '\r'
+        else if (next === 't') buf += '\t'
+        else if (next === '\\') buf += '\\'
+        else if (next === '"') buf += '"'
+        else buf += next ?? ''
+        i += 2
+        continue
+      }
+      if (ch === quote) {
+        return { value: buf, nextLine: line }
+      }
+      buf += ch
+      i++
+    }
+
+    // No closing quote on this line — continue to the next line
+    line++
+    if (line >= lines.length) {
+      // Unterminated quote: return what we have (lenient, matches dotenv)
+      return { value: buf, nextLine: line - 1 }
+    }
+    buf += '\n'
+    segment = lines[line] ?? ''
   }
 }
