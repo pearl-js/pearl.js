@@ -34,17 +34,17 @@ const packageJson = (name: string) => JSON.stringify({
     test:  'vitest run',
   },
   dependencies: {
-    '@pearl-framework/pearl': '^0.1.2',
+    '@pearl-framework/pearl': '^1.1.0',
     'drizzle-orm': '^0.45.0',
     'zod':         '^3.23.0',
     'dotenv':      '^16.0.0',
   },
   devDependencies: {
-    '@pearl-framework/testing': '^0.1.0',
+    '@pearl-framework/testing': '^1.1.0',
     '@types/node': '^20.0.0',
     'tsx':         '^4.15.0',
     'typescript':  '^5.4.0',
-    'vitest':      '^1.6.0',
+    'vitest':      '^3.0.0',
   },
 }, null, 2)
 
