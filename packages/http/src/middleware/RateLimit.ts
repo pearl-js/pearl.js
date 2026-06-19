@@ -20,7 +20,7 @@ export interface RateLimitOptions {
     windowMs: number
     /** Max requests allowed per key within the window. */
     max: number
-    /** Key extractor — defaults to client IP from `x-forwarded-for` or socket. */
+    /** Key extractor — defaults to the client IP (see `trustProxy`). */
     keyGenerator?: (ctx: HttpContext) => string
     /** Override the 429 response body. */
     message?: string
@@ -31,6 +31,17 @@ export interface RateLimitOptions {
      * and `X-RateLimit-Reset` headers to responses.
      */
     standardHeaders?: boolean
+    /**
+     * Whether to trust `X-Forwarded-For` for the client IP.
+     *
+     * **Default: `false`** — uses `socket.remoteAddress` only.
+     *
+     * Set to `true` ONLY when your app sits behind a reverse proxy (nginx,
+     * Cloudflare, ELB, etc.) that overwrites the header. If you trust
+     * `X-Forwarded-For` while running on the public internet, any client
+     * can send their own header and bypass the rate limit entirely.
+     */
+    trustProxy?: boolean
 }
 
 export class MemoryRateLimitStore implements RateLimitStore {
@@ -68,14 +79,18 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
 const defaultStore = new MemoryRateLimitStore()
 
-function defaultKey(ctx: HttpContext): string {
-    const fwd = ctx.request.header('x-forwarded-for')
-    if (fwd) {
-        const first = fwd.split(',')[0]
-        if (first) return first.trim()
+function makeDefaultKey(trustProxy: boolean): (ctx: HttpContext) => string {
+    return (ctx) => {
+        if (trustProxy) {
+            const fwd = ctx.request.header('x-forwarded-for')
+            if (fwd) {
+                const first = fwd.split(',')[0]
+                if (first) return first.trim()
+            }
+        }
+        const socket = ctx.request.nodeRequest.socket
+        return socket.remoteAddress ?? 'unknown'
     }
-    const socket = ctx.request.nodeRequest.socket
-    return socket.remoteAddress ?? 'unknown'
 }
 
 /**
@@ -102,7 +117,7 @@ export class RateLimit implements MiddlewareClass {
             throw new Error('RateLimit: max must be a positive number')
         }
         this.store = options.store ?? defaultStore
-        this.keyGenerator = options.keyGenerator ?? defaultKey
+        this.keyGenerator = options.keyGenerator ?? makeDefaultKey(options.trustProxy ?? false)
         this.standardHeaders = options.standardHeaders ?? true
     }
 

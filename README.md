@@ -4,7 +4,7 @@
 
 **The TypeScript backend framework that does it right.**
 
-Routing · JWT Auth · Drizzle ORM · Validation · Queues · Events · Mail — wired together. One install.
+Routing · JWT & Session Auth · Drizzle ORM · Validation · Background Jobs · Rate Limiting · Mail · Events — wired together. One install.
 
 [![npm](https://img.shields.io/npm/v/@pearl-framework/pearl?color=a855f7&labelColor=111118&style=flat-square)](https://www.npmjs.com/package/@pearl-framework/pearl)
 [![CI](https://img.shields.io/github/actions/workflow/status/skd09/pearl.js/ci.yml?branch=main&color=4ade80&labelColor=111118&label=CI&style=flat-square)](https://github.com/skd09/pearl.js/actions)
@@ -55,12 +55,13 @@ await new HttpKernel().useRouter(router).listen(3000)
 | | |
 |---|---|
 | 🔀 **Routing** | Express-inspired router with typed params, route groups, and middleware chains |
-| 🔐 **Auth** | JWT guard with pluggable user providers — register, login, and protect routes in minutes |
+| 🔐 **Auth** | `JwtGuard`, `SessionGuard`, and `ApiTokenGuard` with pluggable user providers — protect routes in two lines |
+| 🛡️ **Rate Limiting** | Built-in `RateLimit` middleware with a pluggable store (memory default, swap in Redis for multi-process) |
 | 🗃️ **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
 | ✅ **Validation** | Zod-powered `FormRequest` classes — validate and type your request bodies in one step |
-| 📬 **Mail** | `Mailable` classes with SMTP, SES, log, and array transports |
-| 📣 **Events** | Typed synchronous event dispatcher — decouple your services cleanly |
-| 🏗️ **Queues** | BullMQ-backed job queue — dispatch background jobs with delay, retry, and backoff |
+| 📬 **Mail** | `Mailable` classes with SMTP, SES, log, and array transports — plus bounded-concurrency `sendBulk` |
+| 📣 **Events** | Typed event dispatcher with `onError` hook for APM integration |
+| 🏗️ **Queues** | BullMQ-backed job queue — dispatch background jobs with delay, retry, and backoff. Standalone `retryWith` + backoff helpers for one-off async ops |
 | 💉 **IoC Container** | Lightweight service container — bind, singleton, instance, scope |
 | 🧪 **Testing** | HTTP test client, mail fakes, data factories, and transaction-wrapped DB helpers |
 | 🛠️ **CLI** | Scaffold projects and generate controllers, middleware, jobs, and more |
