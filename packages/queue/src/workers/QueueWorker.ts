@@ -1,12 +1,30 @@
 import { Worker as BullWorker, type ConnectionOptions, type Job as BullJob } from 'bullmq'
 import type { Job } from '../jobs/Job.js'
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function safeMerge<T extends object>(target: T, source: Record<string, unknown>): T {
+    for (const key of Object.keys(source)) {
+        if (!UNSAFE_KEYS.has(key)) {
+            (target as Record<string, unknown>)[key] = source[key]
+        }
+    }
+    return target
+}
+
 type JobConstructor = new (...args: never[]) => Job
+
+export type UnknownJobHandler = (jobName: string, data: unknown, error: Error) => void | Promise<void>
 
 export interface WorkerOptions {
   connection: ConnectionOptions
   prefix?: string
   concurrency?: number
+  /**
+   * Called when a job arrives whose class isn't registered. Defaults to a
+   * console.error. Useful for routing unknown-job alerts to your monitoring.
+   */
+  onUnknownJob?: UnknownJobHandler
 }
 
 /**
@@ -19,7 +37,7 @@ export interface WorkerOptions {
  */
 export class QueueWorker {
     private readonly registry = new Map<string, JobConstructor>()
-    private worker?: BullWorker
+    private worker: BullWorker | undefined = undefined
 
     constructor(
         private readonly queueName: string,
@@ -38,6 +56,12 @@ export class QueueWorker {
     // ─── Lifecycle ────────────────────────────────────────────────────────────
 
     start(): this {
+        if (this.worker) {
+            throw new Error(
+                `[QueueWorker] Worker for queue "${this.queueName}" is already running. Call stop() before calling start() again.`
+            )
+        }
+
         this.worker = new BullWorker(
         this.queueName,
         async (bullJob: BullJob) => {
@@ -60,6 +84,7 @@ export class QueueWorker {
 
     async stop(): Promise<void> {
         await this.worker?.close()
+        this.worker = undefined
     }
 
     // ─── Processing ───────────────────────────────────────────────────────────
@@ -74,20 +99,49 @@ export class QueueWorker {
             )
         }
 
-        const job = Object.assign(new JobClass(), bullJob.data) as Job
+        const job = safeMerge(new JobClass(), bullJob.data) as Job
         await job.handle()
     }
 
     private async handleFailed(bullJob: BullJob, error: Error): Promise<void> {
         const isLastAttempt =
-        bullJob.attemptsMade >= (bullJob.opts.attempts ?? 1)
+            bullJob.attemptsMade >= (bullJob.opts.attempts ?? 1)
 
         if (!isLastAttempt) return
 
         const JobClass = this.registry.get(bullJob.name)
-        if (!JobClass) return
+        if (!JobClass) {
+            // The job class isn't registered on this worker. The original
+            // `process()` call already threw — surface it via the configured
+            // hook so it isn't silently dropped, then bail.
+            await this.reportUnknownJob(bullJob, error)
+            return
+        }
 
-        const job = Object.assign(new JobClass(), bullJob.data) as Job
-        await job.failed(error)
+        try {
+            const job = safeMerge(new JobClass(), bullJob.data) as Job
+            await job.failed(error)
+        } catch (failedHookError) {
+            console.error(
+                `[QueueWorker] Job "${bullJob.name}" failed() hook threw on queue "${this.queueName}":`,
+                failedHookError,
+            )
+        }
+    }
+
+    private async reportUnknownJob(bullJob: BullJob, error: Error): Promise<void> {
+        const handler = this.options.onUnknownJob
+        if (handler) {
+            try {
+                await handler(bullJob.name, bullJob.data, error)
+            } catch (handlerError) {
+                console.error('[QueueWorker] onUnknownJob handler threw:', handlerError)
+            }
+            return
+        }
+        console.error(
+            `[QueueWorker] Unknown job "${bullJob.name}" failed permanently on queue "${this.queueName}":`,
+            error,
+        )
     }
 }

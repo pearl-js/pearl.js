@@ -1,6 +1,6 @@
 {
   "name": "@pearl-framework/validate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pearl.js validation — Zod-powered FormRequest, validation pipes, and error formatting",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,8 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
     "@pearl-framework/core": "workspace:*",
@@ -54,5 +55,9 @@
         "./dist/index.d.ts"
       ]
     }
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

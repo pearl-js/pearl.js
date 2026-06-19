@@ -1,8 +1,8 @@
 {
-  "name": "pearl",
+  "name": "Pearl.js",
   "version": "0.1.0",
   "private": true,
-  "description": "The TypeScript framework that does it right.",
+  "description": "A TypeScript framework for Node.js.",
   "workspaces": [
     "packages/*"
   ],
@@ -12,13 +12,18 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "typescript": "^5.4.0",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^20.0.0",
-    "vitest": "^1.6.0"
+    "turbo": "^2.9.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
   },
   "engines": {
     "node": ">=20.0.0",

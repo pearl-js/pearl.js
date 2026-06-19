@@ -1,5 +1,5 @@
-// nodemailer v7 ships its own types — no @types/nodemailer needed
-// Attachment type path is stable across v6/v7
+// Attachment type path is stable across nodemailer v6/v7/v8;
+// @types/nodemailer covers the API surface Pearl actually uses.
 export interface Attachment {
     filename?: string
     content?: string | Buffer
@@ -50,7 +50,7 @@ export interface BuiltMail extends MailContent {
  *     build(): this {
  *       return this
  *         .sendTo(this.to)
- *         .subject('Welcome to Pearl!')
+ *         .subject('Welcome to Pearl.js!')
  *         .html(`<h1>Hi ${this.name}!</h1>`)
  *     }
  *   }

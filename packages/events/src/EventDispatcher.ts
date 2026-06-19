@@ -12,9 +12,22 @@ interface ListenerEntry<T extends Event> {
     once: boolean
 }
 
+export type EventErrorHandler = (err: unknown, event: Event) => void
+
 export class EventDispatcher {
     private readonly listeners = new Map<EventConstructor, ListenerEntry<Event>[]>()
     private readonly wildcardListeners: ListenerEntry<Event>[] = []
+    private errorHandler: EventErrorHandler | null = null
+
+    /**
+     * Register a global error handler for unhandled listener errors during
+     * `dispatchSync`. Replaces the default console.error behavior so APM /
+     * Sentry / etc. can observe failures. Pass `null` to restore default.
+     */
+    onError(handler: EventErrorHandler | null): this {
+        this.errorHandler = handler
+        return this
+    }
 
     // ─── Registration ─────────────────────────────────────────────────────────
 
@@ -35,6 +48,12 @@ export class EventDispatcher {
     /** Listen to ALL events */
     onAny(listener: ListenerFn<Event>): this {
         this.wildcardListeners.push({ listener, once: false })
+        return this
+    }
+
+    /** Listen to ALL events — fires once then removes itself */
+    onceAny(listener: ListenerFn<Event>): this {
+        this.wildcardListeners.push({ listener, once: true })
         return this
     }
 
@@ -67,16 +86,41 @@ export class EventDispatcher {
         )
         }
 
+        // Snapshot wildcard listeners and remove any once-entries before invoking
+        const wildcardSnapshot = [...this.wildcardListeners]
+        const hasOnceWildcards = wildcardSnapshot.some((e) => e.once)
+        if (hasOnceWildcards) {
+            this.wildcardListeners.length = 0
+            for (const entry of wildcardSnapshot) {
+                if (!entry.once) this.wildcardListeners.push(entry)
+            }
+        }
+
         // Run all registered listeners concurrently
         await Promise.all([
         ...entries.map((entry) => this.invoke(entry.listener, event)),
-        ...this.wildcardListeners.map((entry) => this.invoke(entry.listener, event)),
+        ...wildcardSnapshot.map((entry) => this.invoke(entry.listener, event)),
         ])
     }
 
-    /** Dispatch without awaiting — fire and forget */
+    /**
+     * Dispatch without awaiting — fire and forget.
+     * Unhandled listener errors are routed through the registered
+     * `onError` handler, falling back to console.error.
+     */
     dispatchSync<T extends Event>(event: T): void {
-        void this.dispatch(event)
+        this.dispatch(event).catch((err) => {
+            if (this.errorHandler) {
+                try {
+                    this.errorHandler(err, event)
+                } catch (handlerErr) {
+                    console.error('[EventDispatcher] onError handler itself threw:', handlerErr)
+                    console.error('[EventDispatcher] Original listener error:', err)
+                }
+                return
+            }
+            console.error('[EventDispatcher] Uncaught error in listener:', err)
+        })
     }
 
     // ─── Introspection ────────────────────────────────────────────────────────

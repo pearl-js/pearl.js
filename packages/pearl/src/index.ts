@@ -5,11 +5,20 @@ export {
     ServiceProvider,
     Config,
     env,
+    loadDotenv,
+    parseDotenv,
+    PearlError,
+    BindingNotFoundError,
+    CircularDependencyError,
+    ContainerFrozenError,
+    ProviderBootError,
 } from '@pearl-framework/core'
 export type {
     ApplicationOptions,
     IContainer,
     BindingToken,
+    Factory,
+    Binding,
 } from '@pearl-framework/core'
 
 // ─── HTTP ─────────────────────────────────────────────────────────────────────
@@ -20,14 +29,29 @@ export {
     Request,
     Response,
     Pipeline,
+    RateLimit,
+    MemoryRateLimitStore,
+    Controller,
+    Get,
+    Post,
+    Put,
+    Patch,
+    Delete,
 } from '@pearl-framework/http'
 export type {
+    Route,
+    RouteMatch,
     RouteHandler,
     HttpMethod,
     Middleware,
     MiddlewareFn,
     MiddlewareClass,
     NextFn,
+    RateLimitOptions,
+    RateLimitStore,
+    ParsedBody,
+    RouteDefinition,
+    KernelOptions,
 } from '@pearl-framework/http'
 export { HttpServiceProvider } from '@pearl-framework/http'
 
@@ -35,6 +59,7 @@ export { HttpServiceProvider } from '@pearl-framework/http'
 export {
     FormRequest,
     ValidationException,
+    AuthorizationException,
     ValidationPipe,
     validate,
     validateSync,
@@ -54,6 +79,7 @@ export {
     AuthManager,
     JwtGuard,
     ApiTokenGuard,
+    SessionGuard,
     Hash,
     Authenticate,
     OptionalAuth,
@@ -67,6 +93,10 @@ export type {
     JwtPayload,
     TokenRecord,
     TokenStore,
+    SessionRecord,
+    SessionStore,
+    SessionConfig,
+    AuthMiddlewareOptions,
     AuthServiceConfig,
 } from '@pearl-framework/auth'
 
@@ -77,7 +107,10 @@ export {
     EventDispatcher,
     EventServiceProvider,
 } from '@pearl-framework/events'
-export type { EventMap } from '@pearl-framework/events'
+export type {
+    EventMap,
+    EventErrorHandler,
+} from '@pearl-framework/events'
 
 // ─── Queue ────────────────────────────────────────────────────────────────────
 export {
@@ -85,11 +118,19 @@ export {
     QueueManager,
     QueueWorker,
     QueueServiceProvider,
+    retryWith,
+    fixedBackoff,
+    linearBackoff,
+    exponentialBackoff,
 } from '@pearl-framework/queue'
 export type {
     QueueConfig,
     QueueServiceConfig,
     WorkerOptions,
+    UnknownJobHandler,
+    BackoffStrategy,
+    ExponentialBackoffOptions,
+    RetryOptions,
 } from '@pearl-framework/queue'
 
 // ─── Mail ─────────────────────────────────────────────────────────────────────
@@ -104,10 +145,17 @@ export {
 } from '@pearl-framework/mail'
 export type {
     MailerConfig,
+    SendBulkOptions,
+    BulkSendResult,
     MailServiceConfig,
     MailDriver,
     MailTransport,
     SmtpConfig,
+    SesConfig,
+    MailAddress,
+    MailEnvelope,
+    MailContent,
+    BuiltMail,
 } from '@pearl-framework/mail'
 
 // ─── Database ─────────────────────────────────────────────────────────────────

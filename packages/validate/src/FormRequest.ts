@@ -1,6 +1,7 @@
 import type { ZodTypeAny, infer as ZodInfer } from 'zod'
 import type { HttpContext } from '@pearl-framework/http'
 import { ValidationException } from './ValidationException.js'
+import { AuthorizationException } from './AuthorizationException.js'
 
 export abstract class FormRequest<TSchema extends ZodTypeAny = ZodTypeAny> {
     abstract readonly schema: TSchema
@@ -20,8 +21,9 @@ export abstract class FormRequest<TSchema extends ZodTypeAny = ZodTypeAny> {
     async validate(ctx: HttpContext): Promise<ZodInfer<TSchema>> {
         const authorized = await this.authorize(ctx)
         if (!authorized) {
-            ctx.response.forbidden('This action is unauthorized.')
-            throw new Error('Unauthorized')
+            const exception = new AuthorizationException()
+            ctx.response.forbidden(exception.message)
+            throw exception
         }
 
         const input = this.resolveInput(ctx)

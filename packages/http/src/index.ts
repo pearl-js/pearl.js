@@ -15,6 +15,10 @@ export { Controller } from './decorators/Controller.js'
 export { Get, Post, Put, Patch, Delete } from './decorators/Route.js'
 export type { RouteDefinition } from './decorators/Route.js'
 
+// Middleware
+export { RateLimit, MemoryRateLimitStore } from './middleware/RateLimit.js'
+export type { RateLimitOptions, RateLimitStore } from './middleware/RateLimit.js'
+
 // Kernel
 export { HttpKernel } from './HttpKernel.js'
 export type { KernelOptions } from './HttpKernel.js'

@@ -1,6 +1,6 @@
 {
   "name": "@pearl-framework/database",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Pearl.js — ORM-agnostic database layer. Supports Drizzle, Prisma, TypeORM, and raw drivers.",
   "main": "./dist/index.js",
@@ -76,19 +76,24 @@
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.20.0",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "typescript": "^5.4.0",
     "vitest": "^3.0.0"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "tsc"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

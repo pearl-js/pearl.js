@@ -58,11 +58,12 @@ export class HttpKernel {
         rawReq: import('node:http').IncomingMessage,
         rawRes: import('node:http').ServerResponse,
     ): Promise<void> {
-        const req = await Request.fromIncoming(rawReq)
         const res = new Response(rawRes)
-        const ctx = new HttpContext(req, res)
 
         try {
+            const req = await Request.fromIncoming(rawReq)
+            const ctx = new HttpContext(req, res)
+
             const match = this._router.match(req.method, req.path)
 
             if (!match) {
@@ -84,8 +85,13 @@ export class HttpKernel {
             })
         } catch (error) {
             if (!res.sent) {
+                const statusCode = (error as { statusCode?: number }).statusCode
                 const message = error instanceof Error ? error.message : 'Internal Server Error'
-                res.serverError(message)
+                if (statusCode === 400) {
+                    res.json({ message }, 400)
+                } else {
+                    res.serverError(message)
+                }
             }
         }
     }

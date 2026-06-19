@@ -2,6 +2,7 @@
 export { FormRequest } from './FormRequest.js'
 export { ValidationException } from './ValidationException.js'
 export type { ValidationErrors } from './ValidationException.js'
+export { AuthorizationException } from './AuthorizationException.js'
 
 // Standalone helpers
 export { validate, validateSync } from './validate.js'

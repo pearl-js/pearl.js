@@ -1,7 +1,7 @@
 export { Application } from './Application.js'
 export { Container } from './container/Container.js'
 export { ServiceProvider } from './ServiceProvider.js'
-export { Config, env, loadDotenv } from './Config.js'
+export { Config, env, loadDotenv, parseDotenv } from './Config.js'
 export {
   PearlError,
   BindingNotFoundError,

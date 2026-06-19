@@ -1,5 +1,6 @@
 export { Event } from './events/Event.js'
 export { Listener } from './listeners/Listener.js'
 export { EventDispatcher } from './EventDispatcher.js'
+export type { EventErrorHandler } from './EventDispatcher.js'
 export { EventServiceProvider } from './providers/EventServiceProvider.js'
 export type { EventMap } from './providers/EventServiceProvider.js'
