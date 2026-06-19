@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "skd09/pearl.js" }
+  ],
+  "commit": false,
+  "fixed": [],
+  "linked": [
+    [
+      "@pearl-framework/auth",
+      "@pearl-framework/cli",
+      "@pearl-framework/core",
+      "@pearl-framework/database",
+      "@pearl-framework/events",
+      "@pearl-framework/http",
+      "@pearl-framework/mail",
+      "@pearl-framework/pearl",
+      "@pearl-framework/queue",
+      "@pearl-framework/testing",
+      "@pearl-framework/validate"
+    ]
+  ],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}
