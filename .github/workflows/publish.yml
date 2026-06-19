@@ -27,6 +27,13 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
+      - name: Verify npm auth
+        run: |
+          echo "Logged in as: $(npm whoami 2>&1 || echo 'NOT LOGGED IN')"
+          echo "Registry: $(npm config get registry)"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish packages
         run: pnpm -r publish --access public --no-git-checks
         env:
