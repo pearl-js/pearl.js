@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@pearl-framework/core": "workspace:*",
-    "nodemailer": "^8.0.5"
+    "nodemailer": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
