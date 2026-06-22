@@ -108,11 +108,20 @@ build(): this {
     .html('<p>Please find your invoice attached.</p>')
     .attach({
       filename:    'invoice-2024-01.pdf',
-      path:        `/tmp/invoices/${this.invoiceId}.pdf`,
+      content:     await fs.readFile(`/tmp/invoices/${this.invoiceId}.pdf`),
       contentType: 'application/pdf',
     })
 }
 ```
+
+> **Security — attachment path/URL access is disabled by default.**
+> `SmtpTransport` configures nodemailer with `disableFileAccess: true` and
+> `disableUrlAccess: true`, so passing `path: '/some/file'` or `href: 'https://...'`
+> on an attachment will fail. This prevents an attacker who controls part of an
+> attachment from reading arbitrary local files or triggering SSRF against
+> internal endpoints. Read the file yourself and pass it as `content` (as shown
+> above). If you genuinely need path/URL fetching, build your own transport that
+> wraps nodemailer without these flags.
 
 ### Async build
 

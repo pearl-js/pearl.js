@@ -28,6 +28,12 @@ export class SmtpTransport implements MailTransport {
             host: this.config.host,
             port: this.config.port,
             secure: this.config.secure ?? this.config.port === 465,
+            // Refuse filesystem reads and URL fetches for attachment.path /
+            // attachment.href. Without these flags, an attacker who controls
+            // an attachment field can read arbitrary local files or trigger
+            // SSRF against internal endpoints.
+            disableFileAccess: true,
+            disableUrlAccess:  true,
             ...(this.config.auth !== undefined && { auth: this.config.auth }),
         })
 
