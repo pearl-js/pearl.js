@@ -78,7 +78,7 @@
     "drizzle-kit": "^0.20.0",
     "drizzle-orm": "^0.45.2",
     "typescript": "^5.4.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.6"
   },
   "scripts": {
     "build": "tsc",
