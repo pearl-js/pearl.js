@@ -25,6 +25,19 @@ await new HttpKernel().useRouter(router).listen(3000)
 // → Listening on http://localhost:3000
 ```
 
+### Kernel options
+
+```typescript
+new HttpKernel({
+  router,
+  maxBodyBytes:     2 * 1024 * 1024,        // default 1 MiB
+  onUnhandledError: (err) => apm.report(err), // ships unhandled exceptions to your APM
+})
+```
+
+- **`maxBodyBytes`** — hard cap on request body size. Requests exceeding the limit are dropped with `413 Payload Too Large` before any handler runs. `Content-Length` is checked up-front for an early reject; chunked bodies are tracked as they stream and the socket is destroyed once the cap is exceeded.
+- **`onUnhandledError`** — called for every error that escapes the middleware chain. The client only sees `error.message` when the error has an explicit `statusCode` below 500 (i.e. you deliberately threw a client-facing error). Everything else returns a generic `Internal Server Error` body, so framework internals (`TypeError: Cannot read properties of undefined`, etc.) never leak to clients.
+
 ---
 
 ## Routing
@@ -178,7 +191,11 @@ new RateLimit({
 
 ### Behind a reverse proxy
 
-`RateLimit` **ignores `X-Forwarded-For` by default.** If you enable `trustProxy: true` on a server NOT behind a controlled proxy, clients can spoof the header and bypass the limit. Only set it when nginx / Cloudflare / ELB / etc. is overwriting the header on your behalf:
+`RateLimit` **ignores `X-Forwarded-For` by default.** If you enable `trustProxy: true` on a server NOT behind a controlled proxy, clients can spoof the header and bypass the limit. Only set it when nginx / Cloudflare / ELB / etc. is overwriting the header on your behalf.
+
+> **Note on IP normalization.** The first `X-Forwarded-For` hop is used verbatim. Make sure your upstream proxy emits a canonical form — if a single client can reach you as both `192.0.2.1` and `::ffff:192.0.2.1` (IPv4-mapped IPv6), they get two rate-limit buckets. A correctly configured nginx / Cloudflare / ELB / Envoy normalizes this for you; if you're rolling your own proxy, normalize before forwarding.
+
+Examples:
 
 ```typescript
 new RateLimit({

@@ -9,14 +9,32 @@ export interface KernelOptions {
     router?: Router
     port?: number
     host?: string
+    /**
+     * Maximum bytes accepted from a single request body. Requests exceeding
+     * this are dropped with a 413 before the handler runs. Defaults to 1 MiB.
+     */
+    maxBodyBytes?: number
+    /**
+     * Called for every unhandled exception that escapes the middleware chain.
+     * Receives the raw error; runs BEFORE the generic 500 response is sent.
+     * Use it to ship errors to your APM. The client never sees the error
+     * message unless the error sets an explicit `statusCode` below 500.
+     */
+    onUnhandledError?: (error: unknown) => void
 }
 
 export class HttpKernel {
     private readonly server: Server
+    private readonly maxBodyBytes: number
+    private readonly onUnhandledError?: (error: unknown) => void
     private _router: Router
 
     constructor(options: KernelOptions = {}) {
             this._router = options.router ?? new Router()
+            this.maxBodyBytes = options.maxBodyBytes ?? 1_048_576
+            if (options.onUnhandledError !== undefined) {
+                this.onUnhandledError = options.onUnhandledError
+            }
             this.server = createServer(async (rawReq, rawRes) => {
             await this.handleRequest(rawReq, rawRes)
         })
@@ -61,7 +79,7 @@ export class HttpKernel {
         const res = new Response(rawRes)
 
         try {
-            const req = await Request.fromIncoming(rawReq)
+            const req = await Request.fromIncoming(rawReq, { maxBodyBytes: this.maxBodyBytes })
             const ctx = new HttpContext(req, res)
 
             const match = this._router.match(req.method, req.path)
@@ -84,15 +102,25 @@ export class HttpKernel {
                 await match.route.handler(ctx)
             })
         } catch (error) {
-            if (!res.sent) {
-                const statusCode = (error as { statusCode?: number }).statusCode
-                const message = error instanceof Error ? error.message : 'Internal Server Error'
-                if (statusCode === 400) {
-                    res.json({ message }, 400)
-                } else {
-                    res.serverError(message)
-                }
+            if (res.sent) return
+
+            // Errors with an explicit statusCode below 500 are deliberate client
+            // errors thrown by the framework or app — their messages are safe to
+            // surface. Everything else is an unhandled exception whose message
+            // may leak implementation details, so the client only sees a
+            // generic 500.
+            const statusCode = (error as { statusCode?: number }).statusCode
+            const isClientFacing =
+                typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500
+
+            if (isClientFacing) {
+                const message = error instanceof Error ? error.message : 'Bad Request'
+                res.json({ message }, statusCode)
+                return
             }
+
+            this.onUnhandledError?.(error)
+            res.serverError('Internal Server Error')
         }
     }
 }

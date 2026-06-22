@@ -46,7 +46,7 @@
     "pg": "^8.11.0",
     "prisma": ">=5.0.0",
     "@prisma/client": ">=5.0.0",
-    "typeorm": ">=0.3.0"
+    "typeorm": ">=0.3.29"
   },
   "peerDependenciesMeta": {
     "better-sqlite3": {
@@ -83,7 +83,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "prepublishOnly": "tsc"

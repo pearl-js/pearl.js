@@ -233,6 +233,7 @@ app.register(AppAuthServiceProvider)
 - **Algorithm pinning** — `jwt.verify()` is always called with an explicit `algorithms` allowlist. This prevents [algorithm confusion attacks](https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/) where an attacker switches the token's algorithm to bypass verification.
 - **`none` algorithm blocked** — passing `algorithm: 'none'` throws at construction time with a clear error message.
 - **Secrets** — use a minimum of 32 random characters for `JWT_SECRET`. Use `openssl rand -base64 32` to generate one.
+- **API token lookup must be timing-safe.** `ApiTokenGuard` delegates token retrieval to the `TokenStore` you provide. Database-backed stores are typically fine — indexed lookups have negligible timing variance. **In-memory stores must use `crypto.timingSafeEqual`** when matching the supplied token against stored ones; a naive `===` or `Array.find(t => t.token === input)` is theoretically vulnerable to a side-channel attack. Pearl ships 320-bit tokens (`randomBytes(40).toString('hex')`), which makes the practical attack infeasible, but a timing-safe store closes the gap entirely.
 
 ---
 

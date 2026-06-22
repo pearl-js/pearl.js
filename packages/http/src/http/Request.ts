@@ -103,17 +103,28 @@ export class Request {
 
     // ─── Static factory ──────────────────────────────────────────────────────
 
-    static async fromIncoming(raw: IncomingMessage): Promise<Request> {
+    static async fromIncoming(
+        raw: IncomingMessage,
+        options: { maxBodyBytes?: number } = {},
+    ): Promise<Request> {
         const req = new Request(raw)
-        await req.parseBody()
+        await req.parseBody(options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES)
         return req
     }
 
-    private async parseBody(): Promise<void> {
+    private async parseBody(maxBytes: number): Promise<void> {
         if (this.method === 'GET' || this.method === 'HEAD') return
+
+        // Honour Content-Length when the client declares an honest size — cheaper
+        // than reading any bytes off the wire when we already know it's too big.
+        const declared = Number(this.header('content-length'))
+        if (Number.isFinite(declared) && declared > maxBytes) {
+            throw payloadTooLarge(maxBytes)
+        }
 
         return new Promise((resolve, reject) => {
         const chunks: Buffer[] = []
+        let received = 0
 
         const cleanup = () => {
             this.raw.removeListener('data',  onData)
@@ -123,7 +134,15 @@ export class Request {
 
         const fail = (err: Error) => { cleanup(); this.raw.resume(); reject(err) }
 
-        const onData  = (chunk: Buffer) => chunks.push(chunk)
+        const onData  = (chunk: Buffer) => {
+            received += chunk.length
+            if (received > maxBytes) {
+                // Drop the socket — we can't trust the client to stop sending.
+                this.raw.destroy()
+                return fail(payloadTooLarge(maxBytes))
+            }
+            chunks.push(chunk)
+        }
         const onError = (err: Error)    => fail(err)
         const onEnd   = () => {
             cleanup()
@@ -148,4 +167,19 @@ export class Request {
         this.raw.on('end',   onEnd)
         })
     }
+}
+
+/**
+ * Default request body cap. Without a limit, a single attacker can exhaust
+ * server memory with a streamed multi-GB body. Mirrors Fastify's default
+ * (Express's 100KB is friendlier but trips JSON-heavy APIs).
+ */
+const DEFAULT_MAX_BODY_BYTES = 1_048_576 // 1 MiB
+
+function payloadTooLarge(limit: number): Error & { statusCode: number } {
+    const err = new Error(
+        `Request body exceeds the configured limit of ${limit} bytes.`,
+    ) as Error & { statusCode: number }
+    err.statusCode = 413
+    return err
 }
