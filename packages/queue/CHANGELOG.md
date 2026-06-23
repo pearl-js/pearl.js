@@ -1,0 +1,7 @@
+# @pearl-framework/queue
+
+## 1.1.2
+
+### Patch Changes
+
+- Align version with the 1.1.2 release. No functional changes; published so apps that pin a single version across the suite (e.g. `^1.1.2`) can upgrade in one step.
