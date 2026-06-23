@@ -5,8 +5,7 @@
     { "repo": "skd09/pearl.js" }
   ],
   "commit": false,
-  "fixed": [],
-  "linked": [
+  "fixed": [
     [
       "@pearl-framework/auth",
       "@pearl-framework/cli",
@@ -21,6 +20,7 @@
       "@pearl-framework/validate"
     ]
   ],
+  "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
