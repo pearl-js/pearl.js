@@ -1,10 +1,19 @@
 # @pearl-framework/database
 
+## 1.1.4
+
+### Patch Changes
+
+- Update repository URLs to the pearl-js GitHub organization.
+
+- Updated dependencies []:
+  - @pearl-framework/core@1.1.4
+
 ## 1.1.3
 
 ### Patch Changes
 
-- Align with 1.1.3 release. No source-level changes; bumped so every @pearl-framework/* package shares the same version line (see .changeset/config.json `fixed` rule).
+- Align with 1.1.3 release. No source-level changes; bumped so every @pearl-framework/\* package shares the same version line (see .changeset/config.json `fixed` rule).
 
 ## 1.1.2
 

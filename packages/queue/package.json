@@ -1,6 +1,6 @@
 {
   "name": "@pearl-framework/queue",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Pearl.js queue — BullMQ-powered job dispatching, workers, and retries",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -47,6 +47,7 @@
     "typescript": "^5.4.0",
     "vitest": "^3.0.0"
   },
+  "license": "MIT",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"

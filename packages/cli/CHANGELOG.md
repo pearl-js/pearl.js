@@ -1,10 +1,16 @@
 # @pearl-framework/cli
 
+## 1.1.4
+
+### Patch Changes
+
+- Update repository URLs to the pearl-js GitHub organization.
+
 ## 1.1.3
 
 ### Patch Changes
 
-- Align with 1.1.3 release. No source-level changes; bumped so every @pearl-framework/* package shares the same version line (see .changeset/config.json `fixed` rule).
+- Align with 1.1.3 release. No source-level changes; bumped so every @pearl-framework/\* package shares the same version line (see .changeset/config.json `fixed` rule).
 
 ## 1.1.2
 
