@@ -1,5 +1,21 @@
 # @pearl-framework/pearl
 
+## 1.1.4
+
+### Patch Changes
+
+- Update repository URLs to the pearl-js GitHub organization.
+
+- Updated dependencies []:
+  - @pearl-framework/auth@1.1.4
+  - @pearl-framework/core@1.1.4
+  - @pearl-framework/database@1.1.4
+  - @pearl-framework/events@1.1.4
+  - @pearl-framework/http@1.1.4
+  - @pearl-framework/mail@1.1.4
+  - @pearl-framework/queue@1.1.4
+  - @pearl-framework/validate@1.1.4
+
 ## 1.1.3
 
 ### Patch Changes
