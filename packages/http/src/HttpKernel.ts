@@ -83,24 +83,25 @@ export class HttpKernel {
             const ctx = new HttpContext(req, res)
 
             const match = this._router.match(req.method, req.path)
+            if (match) req.setParams(match.params)
 
-            if (!match) {
-                res.notFound(`Cannot ${req.method} ${req.path}`)
-                return
-            }
-
-            req.setParams(match.params)
-
+            // Global middleware runs for EVERY request — including ones that
+            // match no route — so cross-cutting concerns like CORS can handle
+            // preflight (OPTIONS) requests and short-circuit before the 404.
             const middleware = [
                 ...this._router.globalMiddlewares,
-                ...match.route.middleware,
+                ...(match ? match.route.middleware : []),
             ]
 
             await new Pipeline(ctx)
                 .through(middleware)
                 .run(async (ctx: HttpContext) => {
-                await match.route.handler(ctx)
-            })
+                    if (match) {
+                        await match.route.handler(ctx)
+                    } else if (!ctx.response.sent) {
+                        ctx.response.notFound(`Cannot ${req.method} ${req.path}`)
+                    }
+                })
         } catch (error) {
             if (res.sent) return
 
