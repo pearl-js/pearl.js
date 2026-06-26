@@ -7,12 +7,12 @@
 Routing, auth, validation, background jobs, mail, and events — already integrated. One install, one boot, write endpoints.
 
 [![npm](https://img.shields.io/npm/v/@pearl-framework/pearl?color=a855f7&labelColor=111118&style=flat-square)](https://www.npmjs.com/package/@pearl-framework/pearl)
-[![CI](https://img.shields.io/github/actions/workflow/status/skd09/pearl.js/ci.yml?branch=main&color=4ade80&labelColor=111118&label=CI&style=flat-square)](https://github.com/skd09/pearl.js/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/pearl-js/pearl.js/ci.yml?branch=main&color=4ade80&labelColor=111118&label=CI&style=flat-square)](https://github.com/pearl-js/pearl.js/actions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4+-a855f7?labelColor=111118&style=flat-square)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-4ade80?labelColor=111118&style=flat-square)](https://nodejs.org/)
 [![License](https://img.shields.io/npm/l/@pearl-framework/pearl?color=94a3b8&labelColor=111118&style=flat-square)](./LICENSE)
 
-[**Documentation**](https://pearljs.dev/docs/getting-started) · [**npm**](https://www.npmjs.com/package/@pearl-framework/pearl) · [**GitHub**](https://github.com/skd09/pearl.js)
+[**Documentation**](https://pearljs.dev/docs/getting-started) · [**npm**](https://www.npmjs.com/package/@pearl-framework/pearl) · [**GitHub**](https://github.com/pearl-js/pearl.js)
 
 </div>
 
@@ -223,7 +223,7 @@ my-app/
 ## Contributing
 
 ```bash
-git clone https://github.com/skd09/pearl.js
+git clone https://github.com/pearl-js/pearl.js
 cd pearl.js
 pnpm install
 pnpm build

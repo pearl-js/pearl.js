@@ -4,8 +4,8 @@ Thank you for your interest in contributing!
 
 ## Setup
 ```bash
-git clone https://github.com/skd09/pearl
-cd pearl
+git clone https://github.com/pearl-js/pearl.js
+cd pearl.js
 pnpm install
 pnpm build
 ```
