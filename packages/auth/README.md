@@ -206,6 +206,33 @@ const wrong = await Hash.check('wrong', hash)        // → false
 
 ---
 
+## Authorization (Gate)
+
+Define abilities and policies in code, then check them imperatively or enforce them on routes with the `can()` middleware.
+
+```typescript
+import { Gate, can } from '@pearl-framework/auth'
+
+const gate = new Gate<User>()
+  .define('admin',     (u) => u?.role === 'admin')
+  .define('edit-post', (u, post) => !!u && (post as Post).authorId === u.id)
+
+// Imperative
+if (await gate.allows('admin', user)) { /* … */ }
+await gate.authorize('edit-post', user, post)  // throws AccessDeniedError (HTTP 403) if denied
+
+// Route middleware — runs after Authenticate, responds 403 when denied
+router.get('/admin', handler, [Authenticate(auth), can(gate, 'admin')])
+router.put('/posts/:id', handler, [
+  Authenticate(auth),
+  can(gate, 'edit-post', (ctx) => loadPost(ctx.request.param('id'))),
+])
+```
+
+Unknown abilities deny by default. `gate.authorize()` throws `AccessDeniedError`, which the kernel surfaces as a `403`.
+
+---
+
 ## AuthServiceProvider
 
 If you use Pearl's service container, register auth through the provider:
