@@ -13,6 +13,10 @@ export type { Middleware, MiddlewareFn, MiddlewareClass, NextFn } from './routin
 // Middleware
 export { RateLimit, MemoryRateLimitStore } from './middleware/RateLimit.js'
 export type { RateLimitOptions, RateLimitStore } from './middleware/RateLimit.js'
+export { Cors } from './middleware/Cors.js'
+export type { CorsOptions } from './middleware/Cors.js'
+export { RateLimiter, throttle } from './middleware/throttle.js'
+export type { Limit, LimitResolver } from './middleware/throttle.js'
 
 // Kernel
 export { HttpKernel } from './HttpKernel.js'

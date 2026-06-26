@@ -17,6 +17,11 @@ export type { SessionRecord, SessionStore, SessionConfig } from './guards/Sessio
 export { Authenticate, OptionalAuth } from './middleware/Authenticate.js'
 export type { AuthMiddlewareOptions } from './middleware/Authenticate.js'
 
+// Authorization
+export { Gate, AccessDeniedError } from './Gate.js'
+export type { Ability } from './Gate.js'
+export { can } from './middleware/Can.js'
+
 // Service Provider
 export { AuthServiceProvider } from './providers/AuthServiceProvider.js'
 export type { AuthServiceConfig } from './providers/AuthServiceProvider.js'

@@ -31,6 +31,9 @@ export {
     Pipeline,
     RateLimit,
     MemoryRateLimitStore,
+    Cors,
+    RateLimiter,
+    throttle,
 } from '@pearl-framework/http'
 export type {
     Route,
@@ -43,6 +46,9 @@ export type {
     NextFn,
     RateLimitOptions,
     RateLimitStore,
+    CorsOptions,
+    Limit,
+    LimitResolver,
     ParsedBody,
     KernelOptions,
 } from '@pearl-framework/http'
@@ -77,6 +83,9 @@ export {
     Authenticate,
     OptionalAuth,
     AuthServiceProvider,
+    Gate,
+    AccessDeniedError,
+    can,
 } from '@pearl-framework/auth'
 export type {
     AuthUser,
@@ -91,6 +100,7 @@ export type {
     SessionConfig,
     AuthMiddlewareOptions,
     AuthServiceConfig,
+    Ability,
 } from '@pearl-framework/auth'
 
 // ─── Events ───────────────────────────────────────────────────────────────────

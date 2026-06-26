@@ -65,7 +65,9 @@ await new HttpKernel().useRouter(router).listen(3000)
 |---|---|
 | **Routing** | Express-inspired router with typed params, route groups, and middleware chains |
 | **Authentication** | `JwtGuard`, `SessionGuard`, and `ApiTokenGuard` with pluggable user providers — protect routes in two lines |
-| **Rate limiting** | Built-in `RateLimit` middleware with a pluggable store (memory default, swap in Redis for multi-process) |
+| **Authorization** | `Gate` for abilities/policies (`gate.define`, `allows`, `authorize`) + a `can()` middleware for route-level permission checks |
+| **Rate limiting** | `RateLimit` middleware plus named limiters — `RateLimiter.for('login', …)` and `throttle('login')` — with a pluggable store (memory default, swap in Redis for multi-process) |
+| **CORS** | First-class `Cors` middleware — origin allow-list/predicate, methods, headers, credentials, and preflight handling |
 | **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
 | **Validation** | Zod-powered `FormRequest` classes that throw typed `ValidationException` / `AuthorizationException` |
 | **Mail** | `Mailable` classes with SMTP, SES, log, and array transports — plus bounded-concurrency `sendBulk` |
