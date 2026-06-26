@@ -222,6 +222,48 @@ const redisStore: RateLimitStore = {
 new RateLimit({ windowMs: 60_000, max: 100, store: redisStore })
 ```
 
+### Named rate limiters
+
+Define limiters once and reference them by name on routes:
+
+```typescript
+import { RateLimiter, throttle } from '@pearl-framework/http'
+
+// Optional — share counters across processes (defaults to in-memory)
+RateLimiter.useStore(redisStore)
+
+RateLimiter.for('login', () => ({ windowMs: 15 * 60_000, max: 5 }))
+RateLimiter.for('api',   (ctx) => ({
+  windowMs: 60_000,
+  max:      60,
+  key:      ctx.get<{ id: number }>('auth.user')?.id?.toString(), // per-user bucket
+}))
+
+router.post('/auth/login', loginHandler, [throttle('login')])
+router.get('/feed',        feedHandler,  [throttle('api')])
+```
+
+---
+
+## CORS
+
+Register `Cors` globally so it can answer preflight (`OPTIONS`) requests for any route:
+
+```typescript
+import { Cors } from '@pearl-framework/http'
+
+router.use(new Cors({
+  origin:      ['https://app.example.com'], // string | string[] | (origin) => boolean | true | false
+  methods:     ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  maxAge:      600,
+}))
+```
+
+Defaults to allowing any origin (`*`). When `credentials` is enabled, the specific request origin is echoed instead of `*` (as the spec requires) and a `Vary: Origin` header is added. Origins not in the allow-list receive no CORS headers, so the browser blocks them.
+
+---
+
 ## Error handling
 
 Throw or return from your handler and Pearl's kernel will catch it:
