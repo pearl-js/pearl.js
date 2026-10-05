@@ -1,5 +1,13 @@
 # @pearl-framework/testing
 
+## 1.4.0
+
+### Patch Changes
+
+- Updated dependencies [[`3aea8fc`](https://github.com/pearl-js/pearl.js/commit/3aea8fc5b9c5e62febf4a84225c65330a9dd7bca), [`acadafd`](https://github.com/pearl-js/pearl.js/commit/acadafd9487d9aac38df099ea02c43739d64b56b)]:
+  - @pearl-framework/http@1.4.0
+  - @pearl-framework/core@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes

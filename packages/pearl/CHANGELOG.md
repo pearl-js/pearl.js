@@ -1,5 +1,47 @@
 # @pearl-framework/pearl
 
+## 1.4.0
+
+### Minor Changes
+
+- [#6](https://github.com/pearl-js/pearl.js/pull/6) [`2d04a59`](https://github.com/pearl-js/pearl.js/commit/2d04a59e2eeb06c3c4a2d578db62a4457f92b067) Thanks [@skd09](https://github.com/skd09)! - Add `@pearl-framework/openapi` — an OpenAPI 3.1 document and Swagger UI derived from the route table.
+
+  `serveOpenApi(router, { info })` registers `GET /openapi.json` and `GET /docs`; `generateOpenApiDocument(router, options)` returns the document for a build step instead. Paths, methods and path parameters come from the router, and request schemas come from the `FormRequest` that `ValidationPipe` attaches to the route — so nothing is declared twice and the document cannot drift from the validation that actually runs.
+
+  Because `FormRequest.resolveInput` merges body, query and route params into one object, the generator splits them back apart: fields named by the route become path parameters (always required, since the route cannot match without them), the rest become a request body on `POST`/`PUT`/`PATCH` and query parameters otherwise. The `422` response the framework returns on a validation failure is documented automatically. `HEAD` and `OPTIONS` are excluded by default.
+
+  `describeRoute(method, path, …)` adds what a schema cannot express — summary, description, tags, extra responses, `deprecated`, and `hidden` to omit a route.
+
+  `ValidationPipe` now returns a `ValidationMiddleware` carrying a `formRequest` property. Existing call sites are unaffected; the tag is what makes schema discovery possible without a second declaration.
+
+  The Swagger UI page loads assets from a CDN rather than vendoring them, so it needs network access to that CDN. The document reflects every route the router holds — use `excludePaths` or `hidden`, and put `/docs` behind auth if the API is not meant to be discoverable.
+
+- [#5](https://github.com/pearl-js/pearl.js/pull/5) [`6df8638`](https://github.com/pearl-js/pearl.js/commit/6df86389c032f5f0ce9f0c341c5e9967f27350f1) Thanks [@skd09](https://github.com/skd09)! - Add `@pearl-framework/cache` — a key/value cache with in-memory and Redis stores, plus a distributed rate-limit store.
+
+  `Cache` wraps a `CacheStore` and handles serialization: `get`, `put`, `has`, `pull`, `forget`, `flush`, atomic `increment`/`decrement`, and `remember`/`rememberForever`. `remember` caches a `null` result rather than re-running the factory on every request, and `has()` distinguishes a cached `null` from a miss.
+
+  `MemoryStore` is process-local and bounded (10,000 entries by default), evicting the entry closest to expiry and preferring expiring entries over ones stored without a TTL — an unbounded process-local cache is a memory leak for any key space the caller does not control. `RedisStore` takes any client matching `RedisLike`, so `ioredis` stays an optional peer dependency; it prefixes every key so `flush()` cannot delete another application's data and uses `SCAN` rather than `KEYS`.
+
+  `CacheRateLimitStore` adapts any `CacheStore` to the HTTP package's `RateLimitStore`. The bundled rate-limit store is process-local, so behind more than one worker the effective limit was `max × processes`; backing it with `RedisStore` makes the window shared. The TTL is applied only by the increment that creates the key, so the window is fixed from the first hit instead of sliding forward on every request.
+
+### Patch Changes
+
+- [#1](https://github.com/pearl-js/pearl.js/pull/1) [`8bb577d`](https://github.com/pearl-js/pearl.js/commit/8bb577d2d4c4cd093ac25aabea0883d38d7d67aa) Thanks [@skd09](https://github.com/skd09)! - Add the `repository` and `homepage` fields to the meta package, and pin its publish registry.
+
+  `NPM_CONFIG_PROVENANCE` is enabled for releases, and npm refuses to generate a provenance attestation for a package with no `repository` field — so publishing `@pearl-framework/pearl` would fail while the other ten packages succeeded. Also sets `publishConfig.registry` to match the rest of the workspace.
+
+- Updated dependencies [[`2d04a59`](https://github.com/pearl-js/pearl.js/commit/2d04a59e2eeb06c3c4a2d578db62a4457f92b067), [`3bce1c0`](https://github.com/pearl-js/pearl.js/commit/3bce1c07bc6bcb9ffd8a27e7897a5d134efbc4b1), [`3aea8fc`](https://github.com/pearl-js/pearl.js/commit/3aea8fc5b9c5e62febf4a84225c65330a9dd7bca), [`acadafd`](https://github.com/pearl-js/pearl.js/commit/acadafd9487d9aac38df099ea02c43739d64b56b), [`6df8638`](https://github.com/pearl-js/pearl.js/commit/6df86389c032f5f0ce9f0c341c5e9967f27350f1)]:
+  - @pearl-framework/openapi@1.4.0
+  - @pearl-framework/validate@1.4.0
+  - @pearl-framework/queue@1.4.0
+  - @pearl-framework/auth@1.4.0
+  - @pearl-framework/http@1.4.0
+  - @pearl-framework/cache@1.4.0
+  - @pearl-framework/core@1.4.0
+  - @pearl-framework/database@1.4.0
+  - @pearl-framework/events@1.4.0
+  - @pearl-framework/mail@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes

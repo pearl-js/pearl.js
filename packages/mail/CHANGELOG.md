@@ -1,5 +1,12 @@
 # @pearl-framework/mail
 
+## 1.4.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @pearl-framework/core@1.4.0
+
 ## 1.3.0
 
 ### Minor Changes
