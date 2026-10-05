@@ -2,14 +2,25 @@ import { ServiceProvider } from '@pearl-framework/core'
 import { QueueManager } from '../QueueManager.js'
 import { QueueWorker } from '../workers/QueueWorker.js'
 import type { ConnectionOptions } from 'bullmq'
+import type { Job } from '../jobs/Job.js'
+
+type JobConstructor = new (...args: never[]) => Job
 
 export interface QueueServiceConfig {
     connection: ConnectionOptions
     prefix?: string
     defaultQueue?: string
+    /**
+     * Job classes the started workers can handle. A worker with an empty
+     * registry rejects every job it receives, so this is required whenever
+     * `workers` is set; a per-worker `jobs` overrides it.
+     */
+    jobs?: JobConstructor[]
     workers?: Array<{
         queue: string
         concurrency?: number
+        /** Job classes for this worker only. Defaults to the top-level `jobs`. */
+        jobs?: JobConstructor[]
     }>
 }
 
@@ -54,6 +65,16 @@ export class QueueServiceProvider extends ServiceProvider {
                 ...(this.config.prefix !== undefined && { prefix: this.config.prefix }),
                 ...(workerConfig.concurrency !== undefined && { concurrency: workerConfig.concurrency }),
             })
+
+            const jobs = workerConfig.jobs ?? this.config.jobs ?? []
+            if (jobs.length === 0) {
+                throw new Error(
+                    `[Pearl] QueueServiceProvider: worker for queue "${workerConfig.queue}" has ` +
+                    'no job classes. Set `jobs` on the queue config (or on the worker entry) — ' +
+                    'a worker with an empty registry fails every job it receives.',
+                )
+            }
+            worker.register(...jobs)
 
             this.workers.push(worker)
             worker.start()

@@ -76,7 +76,7 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Queues** | BullMQ-backed job queue with delay, retry, and backoff. Standalone `retryWith` + backoff helpers for one-off async ops |
 | **IoC Container** | Lightweight service container — bind, singleton, instance, scope. Frozen after boot |
 | **Testing** | HTTP test client, mail fakes, data factories, and transaction-wrapped DB helpers |
-| **CLI** | Scaffold projects and generate controllers, middleware, jobs, mailables, and more |
+| **CLI** | Scaffold projects, generate controllers/middleware/jobs/mailables, and run `migrate`, `db:seed`, `queue:work` |
 
 ---
 
@@ -185,7 +185,18 @@ pearl make:listener    SendWelcomeEmail --event UserRegistered
 pearl make:mailable    WelcomeMail
 pearl make:model       Post --migration
 pearl make:migration   create_posts_table
+
+# Database
+pearl migrate                              # run migrations
+pearl db:seed                              # run database/seeders/*
+pearl db:seed --class DatabaseSeeder
+
+# Queue
+pearl queue:work                           # process jobs until stopped
+pearl queue:work --queue mail --concurrency 5
 ```
+
+`migrate`, `db:seed`, and `queue:work` load `src/bootstrap.ts` to read your configuration — see the [CLI reference](./packages/cli#readme) for the convention.
 
 ---
 
@@ -195,6 +206,7 @@ pearl make:migration   create_posts_table
 my-app/
 ├── src/
 │   ├── server.ts                    ← entry point
+│   ├── bootstrap.ts                 ← registers providers; loaded by the CLI
 │   ├── providers/
 │   │   └── AppServiceProvider.ts    ← register your bindings here
 │   ├── controllers/
@@ -206,7 +218,8 @@ my-app/
 │   ├── mail/
 │   └── middleware/
 ├── database/
-│   └── migrations/
+│   ├── migrations/
+│   └── seeders/                      ← run with `pearl db:seed`
 ├── tests/
 ├── .env                              ← auto-created, auto-loaded by Application.boot()
 └── package.json
