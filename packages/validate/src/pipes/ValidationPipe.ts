@@ -5,6 +5,17 @@ import { ValidationException } from '../ValidationException.js'
 type FormRequestConstructor<T extends FormRequest> = new () => T
 
 /**
+ * The middleware ValidationPipe returns, tagged with the FormRequest it
+ * validates against. `@pearl-framework/openapi` reads this to derive request
+ * schemas from the routes themselves, so documenting an endpoint needs no
+ * second declaration that can drift from the validation.
+ */
+export interface ValidationMiddleware {
+    (ctx: HttpContext, next: NextFn): Promise<void>
+    readonly formRequest: new () => FormRequest
+}
+
+/**
  * ValidationPipe is a middleware factory that validates the request
  * using a FormRequest class before passing to the controller.
  *
@@ -17,8 +28,8 @@ type FormRequestConstructor<T extends FormRequest> = new () => T
  */
 export function ValidationPipe<T extends FormRequest>(
   RequestClass: FormRequestConstructor<T>,
-) {
-    return async (ctx: HttpContext, next: NextFn): Promise<void> => {
+): ValidationMiddleware {
+    const middleware = async (ctx: HttpContext, next: NextFn): Promise<void> => {
         try {
             const instance = new RequestClass()
             const validated = await instance.validate(ctx)
@@ -35,4 +46,9 @@ export function ValidationPipe<T extends FormRequest>(
             throw error
         }
     }
+
+    return Object.defineProperty(middleware, 'formRequest', {
+        value: RequestClass,
+        enumerable: true,
+    }) as ValidationMiddleware
 }

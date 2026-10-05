@@ -2,7 +2,9 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": [
     "@changesets/changelog-github",
-    { "repo": "pearl-js/pearl.js" }
+    {
+      "repo": "pearl-js/pearl.js"
+    }
   ],
   "commit": false,
   "fixed": [
@@ -14,6 +16,7 @@
       "@pearl-framework/events",
       "@pearl-framework/http",
       "@pearl-framework/mail",
+      "@pearl-framework/openapi",
       "@pearl-framework/pearl",
       "@pearl-framework/queue",
       "@pearl-framework/testing",

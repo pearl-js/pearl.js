@@ -212,3 +212,16 @@ export type {
     SqliteConfig,
     MigratorOptions,
 } from '@pearl-framework/database'
+// ─── OpenAPI ──────────────────────────────────────────────────────────────────
+export {
+    generateOpenApiDocument,
+    serveOpenApi,
+    describeRoute,
+    toOpenApiPath,
+} from '@pearl-framework/openapi'
+export type {
+    OpenApiInfo,
+    OpenApiOptions,
+    ServeOpenApiOptions,
+    RouteDescription,
+} from '@pearl-framework/openapi'

@@ -198,6 +198,34 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@20.19.33)(jiti@2.6.1)(tsx@4.21.0)
 
+  packages/openapi:
+    dependencies:
+      '@pearl-framework/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pearl-framework/http':
+        specifier: workspace:*
+        version: link:../http
+      '@pearl-framework/validate':
+        specifier: workspace:*
+        version: link:../validate
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+      zod-to-json-schema:
+        specifier: ^3.23.0
+        version: 3.25.2(zod@3.25.76)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.33
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.6(@types/node@20.19.33)(jiti@2.6.1)(tsx@4.21.0)
+
   packages/pearl:
     dependencies:
       '@pearl-framework/auth':
@@ -218,6 +246,9 @@ importers:
       '@pearl-framework/mail':
         specifier: workspace:*
         version: link:../mail
+      '@pearl-framework/openapi':
+        specifier: workspace:*
+        version: link:../openapi
       '@pearl-framework/queue':
         specifier: workspace:*
         version: link:../queue
@@ -2488,6 +2519,11 @@ packages:
   zeptomatch@2.1.0:
     resolution: {integrity: sha512-KiGErG2J0G82LSpniV0CtIzjlJ10E04j02VOudJsPyPwNZgGnRKQy7I1R7GMyg/QswnE4l7ohSGrQbQbjXPPDA==}
 
+  zod-to-json-schema@3.25.2:
+    resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
+    peerDependencies:
+      zod: ^3.25.28 || ^4
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -4532,5 +4568,9 @@ snapshots:
     dependencies:
       grammex: 3.1.12
       graphmatch: 1.1.1
+
+  zod-to-json-schema@3.25.2(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod@3.25.76: {}
