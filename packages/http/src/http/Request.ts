@@ -1,4 +1,5 @@
 import type { IncomingMessage } from 'node:http'
+import { parseCookieHeader, unsignCookie } from './cookies.js'
 
 export interface ParsedBody {
     [key: string]: unknown
@@ -6,6 +7,8 @@ export interface ParsedBody {
 
 export class Request {
     private _body: ParsedBody = {}
+    private _cookies?: Record<string, string>
+    private _cookieSecret?: string
     private _params: Record<string, string> = {}
     private _query: Record<string, string> = {}
     private _path: string
@@ -44,6 +47,38 @@ export class Request {
     header(name: string): string | undefined {
         const value = this.raw.headers[name.toLowerCase()]
         return Array.isArray(value) ? value[0] : value
+    }
+
+    // ─── Cookies ─────────────────────────────────────────────────────────────
+
+    /** Parsed `Cookie` header. Parsed once on first access. */
+    get cookies(): Record<string, string> {
+        this._cookies ??= parseCookieHeader(this.header('cookie'))
+        return this._cookies
+    }
+
+    cookie(name: string): string | undefined {
+        return this.cookies[name]
+    }
+
+    /**
+     * Read a cookie written with `signed: true` and verify its signature.
+     * Returns undefined when the cookie is absent, unsigned, or tampered with —
+     * a forged value is indistinguishable from a missing one to the caller.
+     */
+    signedCookie(name: string): string | undefined {
+        const raw = this.cookies[name]
+        if (raw === undefined) return undefined
+        if (this._cookieSecret === undefined) {
+            throw new Error(
+                'Request.signedCookie() needs a cookie secret. Pass cookieSecret to HttpKernel.',
+            )
+        }
+        return unsignCookie(raw, this._cookieSecret) ?? undefined
+    }
+
+    setCookieSecret(secret: string): void {
+        this._cookieSecret = secret
     }
 
     // ─── Route params ────────────────────────────────────────────────────────
@@ -105,9 +140,10 @@ export class Request {
 
     static async fromIncoming(
         raw: IncomingMessage,
-        options: { maxBodyBytes?: number } = {},
+        options: { maxBodyBytes?: number; cookieSecret?: string } = {},
     ): Promise<Request> {
         const req = new Request(raw)
+        if (options.cookieSecret !== undefined) req.setCookieSecret(options.cookieSecret)
         await req.parseBody(options.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES)
         return req
     }

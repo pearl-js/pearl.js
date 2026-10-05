@@ -34,6 +34,10 @@ export {
     Cors,
     RateLimiter,
     throttle,
+    parseCookieHeader,
+    serializeCookie,
+    signCookie,
+    unsignCookie,
 } from '@pearl-framework/http'
 export type {
     Route,
@@ -51,6 +55,7 @@ export type {
     LimitResolver,
     ParsedBody,
     KernelOptions,
+    CookieOptions,
 } from '@pearl-framework/http'
 export { HttpServiceProvider } from '@pearl-framework/http'
 
@@ -86,6 +91,10 @@ export {
     Gate,
     AccessDeniedError,
     can,
+    session,
+    startSession,
+    endSession,
+    rotateSessionCookie,
 } from '@pearl-framework/auth'
 export type {
     AuthUser,
@@ -101,6 +110,7 @@ export type {
     AuthMiddlewareOptions,
     AuthServiceConfig,
     Ability,
+    SessionCookieOptions,
 } from '@pearl-framework/auth'
 
 // ─── Events ───────────────────────────────────────────────────────────────────
