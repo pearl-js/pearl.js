@@ -3,6 +3,13 @@ export { Request } from './http/Request.js'
 export { Response } from './http/Response.js'
 export { HttpContext } from './http/HttpContext.js'
 export type { ParsedBody } from './http/Request.js'
+export {
+    parseCookieHeader,
+    serializeCookie,
+    signCookie,
+    unsignCookie,
+} from './http/cookies.js'
+export type { CookieOptions } from './http/cookies.js'
 
 // Routing
 export { Router } from './routing/Router.js'

@@ -131,10 +131,22 @@ router.post('/auth/login', async (ctx) => {
 
 ## SessionGuard (cookie auth)
 
-Use `SessionGuard` when you want cookie-backed sessions instead of Bearer tokens. The guard issues an opaque, cryptographically random session id; pair it with your own `Set-Cookie` header to send it back to the client. Supports rotation-on-use and "log out everywhere."
+Use `SessionGuard` when you want cookie-backed sessions instead of Bearer tokens. The guard issues an opaque, cryptographically random session id; the `session()` middleware carries it in a signed cookie. Supports rotation-on-use and "log out everywhere."
+
+Set `cookieSecret` on the kernel so the session cookie is signed:
 
 ```typescript
-import { SessionGuard } from '@pearl-framework/auth'
+new HttpKernel({ router, cookieSecret: process.env.COOKIE_SECRET })
+```
+
+```typescript
+import {
+  SessionGuard,
+  session,
+  startSession,
+  endSession,
+  rotateSessionCookie,
+} from '@pearl-framework/auth'
 import type { SessionStore } from '@pearl-framework/auth'
 
 // Bring your own store — Redis, a DB table, etc.
@@ -148,28 +160,43 @@ const store: SessionStore = {
 const sessions = new SessionGuard(userProvider, store, {
   lifetimeSeconds: 60 * 60 * 2,   // default 2h
   rotateOnUse:     true,          // issue a fresh id on every successful check
+  onRotate:        rotateSessionCookie(),  // required when rotateOnUse is true
 })
+
+// Resolve the session cookie into ctx.get('auth.user') for every request
+router.use(session(sessions))
 
 // Login
 router.post('/login', async (ctx) => {
   const { email, password } = ctx.request.body as { email: string; password: string }
-  const id = await sessions.attempt(email, password)
-  if (!id) return ctx.response.unauthorized()
-  ctx.response.header('set-cookie', `sid=${id}; HttpOnly; Secure; SameSite=Lax`)
+  const user = await userProvider.findByCredentials(email, password)
+  if (!user) return ctx.response.unauthorized()
+
+  await startSession(ctx, sessions, user)   // issues the session + sets the cookie
   ctx.response.ok({ ok: true })
 })
 
-// Logout this session
-await sessions.logout(id)
+// Logout this session — destroys the record and clears the cookie
+router.post('/logout', async (ctx) => {
+  await endSession(ctx, sessions)
+  ctx.response.noContent()
+})
+
+// Require a session on a route
+router.get('/me', meHandler, [session(sessions, { required: true })])
 
 // Log out everywhere for this user
 await sessions.logoutAll(user)
 ```
 
+`rotateOnUse` needs `onRotate: rotateSessionCookie()`. The guard is constructed once but the replacement `Set-Cookie` belongs to whichever request is in flight, so that hook bridges the two — without it the rotated id is never sent and the user is logged out on their next request.
+
 Security notes:
 - IDs are 256 bits of entropy from `randomBytes(32)`.
 - The compare against the stored id uses `timingSafeEqual` to remove a side channel from in-process equality.
 - Expired sessions are destroyed automatically the first time they're accessed.
+- The cookie is signed by default (`signed: true`), so a client cannot submit arbitrary ids to probe your session store. An unknown or forged id clears the cookie.
+- Pass `cookie: { secure: true }` in deployed environments — the cookie layer defaults `secure` to false so local http development works.
 
 ## ApiTokenGuard (long-lived tokens)
 

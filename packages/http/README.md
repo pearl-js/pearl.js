@@ -109,6 +109,48 @@ router.get('/example', async (ctx) => {
 
 ---
 
+## Cookies
+
+Reading needs no setup. Writing defaults to `HttpOnly`, `SameSite=Lax`, `Path=/`.
+
+```typescript
+router.get('/prefs', async (ctx) => {
+  const theme = ctx.request.cookie('theme')        // string | undefined
+  const all   = ctx.request.cookies                // { theme: 'dark', … }
+
+  ctx.response.cookie('theme', 'dark', { maxAge: 31_536_000 })
+  ctx.response.clearCookie('stale_flag')
+  ctx.response.ok({ theme })
+})
+```
+
+Each cookie gets its own `Set-Cookie` header, so queuing several works as expected.
+
+### Signed cookies
+
+Signing makes tampering detectable — required for anything a client must not be able to forge, such as a session id. Give the kernel a secret:
+
+```typescript
+new HttpKernel({ router, cookieSecret: process.env.COOKIE_SECRET })
+```
+
+```typescript
+ctx.response.cookie('sid', sessionId, { signed: true, secure: true })
+
+const sid = ctx.request.signedCookie('sid')   // undefined if forged, absent, or unsigned
+```
+
+`signedCookie()` returns `undefined` rather than throwing on a bad signature, so a forged value is indistinguishable from a missing one. Signing uses HMAC-SHA256 with a timing-safe comparison.
+
+Notes:
+- `secure` defaults to **false** so local http development works. Set it to `true` in every deployed environment.
+- `sameSite: 'none'` throws unless `secure: true` is also set, since browsers silently drop that combination.
+- Duplicate cookie names in a request resolve to the **first** occurrence — browsers send the most specific cookie first, so preferring the last would let a sibling subdomain override the host's own.
+
+For cookie-backed authentication, use the session middleware in [`@pearl-framework/auth`](../auth/README.md#sessionguard-cookie-auth) rather than wiring this by hand.
+
+---
+
 ## Middleware
 
 Middleware is any function or class that follows the `(ctx, next) => Promise<void>` shape.

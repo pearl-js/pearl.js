@@ -68,6 +68,7 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Authorization** | `Gate` for abilities/policies (`gate.define`, `allows`, `authorize`) + a `can()` middleware for route-level permission checks |
 | **Rate limiting** | `RateLimit` middleware plus named limiters — `RateLimiter.for('login', …)` and `throttle('login')` — with a pluggable store (memory default, swap in Redis for multi-process) |
 | **CORS** | First-class `Cors` middleware — origin allow-list/predicate, methods, headers, credentials, and preflight handling |
+| **Cookies & sessions** | Cookie reading/writing with `HttpOnly`/`SameSite=Lax` defaults, HMAC-signed cookies, and a `session()` middleware that drives `SessionGuard` end to end |
 | **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
 | **Validation** | Zod-powered `FormRequest` classes that throw typed `ValidationException` / `AuthorizationException` |
 | **Mail** | `Mailable` classes with SMTP, SES, log, and array transports — plus bounded-concurrency `sendBulk` |
@@ -152,7 +153,7 @@ Pearl.js is a monorepo. Each package is independently installable from npm, or p
 |---|---|---|
 | [`@pearl-framework/pearl`](https://www.npmjs.com/package/@pearl-framework/pearl) | Meta-package — re-exports every public API | [src](./packages/pearl#readme) |
 | [`@pearl-framework/core`](https://www.npmjs.com/package/@pearl-framework/core) | Application bootstrap, IoC container, service providers, config, env | [src](./packages/core#readme) |
-| [`@pearl-framework/http`](https://www.npmjs.com/package/@pearl-framework/http) | Router, kernel, request/response, middleware pipeline, rate limiting | [src](./packages/http#readme) |
+| [`@pearl-framework/http`](https://www.npmjs.com/package/@pearl-framework/http) | Router, kernel, request/response, cookies, middleware pipeline, rate limiting | [src](./packages/http#readme) |
 | [`@pearl-framework/auth`](https://www.npmjs.com/package/@pearl-framework/auth) | JWT, session, and API token guards plus `Authenticate` middleware and scrypt hashing | [src](./packages/auth#readme) |
 | [`@pearl-framework/database`](https://www.npmjs.com/package/@pearl-framework/database) | ORM-agnostic adapter pattern with Drizzle as the default | [src](./packages/database#readme) |
 | [`@pearl-framework/validate`](https://www.npmjs.com/package/@pearl-framework/validate) | `FormRequest`, Zod-backed validation, typed validation/authorization exceptions | [src](./packages/validate#readme) |
