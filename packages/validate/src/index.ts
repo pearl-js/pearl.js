@@ -9,6 +9,7 @@ export { validate, validateSync } from './validate.js'
 
 // Middleware
 export { ValidationPipe } from './pipes/ValidationPipe.js'
+export type { ValidationMiddleware } from './pipes/ValidationPipe.js'
 
 // Rule shorthands
 export { rules } from './rules/index.js'

@@ -17,6 +17,7 @@
       "@pearl-framework/events",
       "@pearl-framework/http",
       "@pearl-framework/mail",
+      "@pearl-framework/openapi",
       "@pearl-framework/pearl",
       "@pearl-framework/queue",
       "@pearl-framework/testing",

@@ -26,6 +26,7 @@
     "@pearl-framework/events": "workspace:*",
     "@pearl-framework/http": "workspace:*",
     "@pearl-framework/mail": "workspace:*",
+    "@pearl-framework/openapi": "workspace:*",
     "@pearl-framework/queue": "workspace:*",
     "@pearl-framework/validate": "workspace:*",
     "drizzle-orm": "^0.45.2"

@@ -69,6 +69,7 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Rate limiting** | `RateLimit` middleware plus named limiters — `RateLimiter.for('login', …)` and `throttle('login')` — with a pluggable store (memory default, swap in Redis for multi-process) |
 | **Cache** | `Cache` with `remember`, atomic counters, a bounded in-memory store, and a Redis store that also backs distributed rate limiting |
 | **CORS** | First-class `Cors` middleware — origin allow-list/predicate, methods, headers, credentials, and preflight handling |
+| **OpenAPI** | `GET /openapi.json` and Swagger UI derived from your routes and `FormRequest` schemas — no hand-maintained spec to drift |
 | **Cookies & sessions** | Cookie reading/writing with `HttpOnly`/`SameSite=Lax` defaults, HMAC-signed cookies, and a `session()` middleware that drives `SessionGuard` end to end |
 | **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
 | **Validation** | Zod-powered `FormRequest` classes that throw typed `ValidationException` / `AuthorizationException` |
@@ -152,6 +153,7 @@ Pearl.js is a monorepo. Each package is independently installable from npm, or p
 
 | Package | Description | Source |
 |---|---|---|
+| [`@pearl-framework/openapi`](https://www.npmjs.com/package/@pearl-framework/openapi) | OpenAPI 3.1 document and Swagger UI generated from the route table | [src](./packages/openapi#readme) |
 | [`@pearl-framework/pearl`](https://www.npmjs.com/package/@pearl-framework/pearl) | Meta-package — re-exports every public API | [src](./packages/pearl#readme) |
 | [`@pearl-framework/core`](https://www.npmjs.com/package/@pearl-framework/core) | Application bootstrap, IoC container, service providers, config, env | [src](./packages/core#readme) |
 | [`@pearl-framework/http`](https://www.npmjs.com/package/@pearl-framework/http) | Router, kernel, request/response, cookies, middleware pipeline, rate limiting | [src](./packages/http#readme) |
