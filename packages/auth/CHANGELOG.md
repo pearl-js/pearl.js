@@ -1,5 +1,43 @@
 # @pearl-framework/auth
 
+## 2.0.0
+
+### Minor Changes
+
+- [#3](https://github.com/pearl-js/pearl.js/pull/3) [`3aea8fc`](https://github.com/pearl-js/pearl.js/commit/3aea8fc5b9c5e62febf4a84225c65330a9dd7bca) Thanks [@skd09](https://github.com/skd09)! - Add a cookie layer and a session middleware that makes `SessionGuard` usable end to end.
+
+  `Request` gains `cookies`, `cookie(name)`, and `signedCookie(name)`; `Response` gains `cookie()`, `clearCookie()`, and `appendHeader()`. Outgoing cookies default to `HttpOnly`, `SameSite=Lax`, `Path=/`, and each is emitted as its own `Set-Cookie` header. Signed cookies use HMAC-SHA256 with a timing-safe compare and read back as `undefined` when forged, so a tampered value is indistinguishable from a missing one. Set `cookieSecret` on `HttpKernel` to enable them.
+
+  `session()`, `startSession()`, `endSession()`, and `rotateSessionCookie()` wire `SessionGuard` to that cookie layer: the middleware resolves a signed session cookie into `auth.user`, clears a stale or forged id, and re-issues the cookie when `rotateOnUse` rotates it. Previously `SessionGuard` was exported but unusable without hand-rolling `Set-Cookie` parsing, and a rotated id had no way to reach the browser.
+
+  `Response.appendHeader()` accumulates comma-joined headers instead of overwriting, which `header()` does — relevant for `Vary`, where a clobbered value can make a CDN serve one origin's response to another.
+
+- [#2](https://github.com/pearl-js/pearl.js/pull/2) [`acadafd`](https://github.com/pearl-js/pearl.js/commit/acadafd9487d9aac38df099ea02c43739d64b56b) Thanks [@skd09](https://github.com/skd09)! - **Breaking:** refuse credentialed CORS with a reflected origin. Also fixes authorization policies with async resolvers.
+
+  `can()` did not await its `argResolver`, so the ability received a pending promise instead of the resource and every async policy denied. A rejecting resolver also escaped the pipeline as an unhandled rejection rather than reaching the kernel.
+
+  `Cors` echoed the caller's `Origin` alongside `Access-Control-Allow-Credentials: true` when no origin was configured, which let any site read authenticated responses.
+
+  **This is the breaking change.** `credentials: true` now requires an explicit `origin` and throws at construction when paired with `'*'`, `true`, or an omitted origin. A `new Cors({ credentials: true })` that previously started now fails fast at boot. Migrate by listing your origins:
+
+  ```ts
+  // before - reflected any origin, which defeated CORS
+  new Cors({ credentials: true });
+
+  // after
+  new Cors({ origin: ["https://app.example.com"], credentials: true });
+  ```
+
+  A disallowed preflight now answers 403 rather than the configured success status.
+
+  `throttle()` now validates the resolved limit the way `RateLimit`'s constructor does. `windowMs: 0` silently disabled the limiter and `NaN` locked the key out for the process lifetime; both now throw naming the limiter. `Limit.key` and `Limit.message` are typed `| undefined` so the documented per-user bucket compiles under `exactOptionalPropertyTypes`.
+
+### Patch Changes
+
+- Updated dependencies [[`3aea8fc`](https://github.com/pearl-js/pearl.js/commit/3aea8fc5b9c5e62febf4a84225c65330a9dd7bca), [`acadafd`](https://github.com/pearl-js/pearl.js/commit/acadafd9487d9aac38df099ea02c43739d64b56b)]:
+  - @pearl-framework/http@2.0.0
+  - @pearl-framework/core@2.0.0
+
 ## 1.3.0
 
 ### Minor Changes
