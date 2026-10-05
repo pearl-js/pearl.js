@@ -67,4 +67,39 @@ describe('can() middleware', () => {
         expect(next).not.toHaveBeenCalled()
         expect(getForbidden()).toMatch(/Not authorized/)
     })
+
+    // The documented resolver form loads the resource, so it returns a promise.
+    // Passing the promise through unawaited makes every async policy deny.
+    it('awaits an async arg resolver before checking the ability', async () => {
+        const { ctx } = makeCtx({ id: 7, role: 'user' })
+        const next = vi.fn()
+        const resolver = async () => ({ authorId: 7 })
+        await can(makeGate(), 'edit-post', resolver)(ctx, next)
+        expect(next).toHaveBeenCalledOnce()
+    })
+
+    it('denies when the awaited resource fails the ability', async () => {
+        const { ctx, getForbidden } = makeCtx({ id: 7, role: 'user' })
+        const next = vi.fn()
+        const resolver = async () => ({ authorId: 8 })
+        await can(makeGate(), 'edit-post', resolver)(ctx, next)
+        expect(next).not.toHaveBeenCalled()
+        expect(getForbidden()).toMatch(/Not authorized/)
+    })
+
+    it('still supports a synchronous arg resolver', async () => {
+        const { ctx } = makeCtx({ id: 7, role: 'user' })
+        const next = vi.fn()
+        await can(makeGate(), 'edit-post', () => ({ authorId: 7 }))(ctx, next)
+        expect(next).toHaveBeenCalledOnce()
+    })
+
+    // Unawaited, a rejecting resolver escapes the pipeline as an unhandled
+    // rejection instead of reaching the kernel's error handler.
+    it('propagates a rejecting arg resolver to the caller', async () => {
+        const { ctx } = makeCtx({ id: 7, role: 'user' })
+        const resolver = async () => { throw new Error('post lookup failed') }
+        await expect(can(makeGate(), 'edit-post', resolver)(ctx, vi.fn()))
+            .rejects.toThrow(/post lookup failed/)
+    })
 })

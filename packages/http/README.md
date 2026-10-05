@@ -260,7 +260,9 @@ router.use(new Cors({
 }))
 ```
 
-Defaults to allowing any origin (`*`). When `credentials` is enabled, the specific request origin is echoed instead of `*` (as the spec requires) and a `Vary: Origin` header is added. Origins not in the allow-list receive no CORS headers, so the browser blocks them.
+Defaults to allowing any origin (`*`). Origins not in the allow-list receive no CORS headers, so the browser blocks them; a disallowed preflight is answered `403`.
+
+`credentials: true` requires an explicit `origin` — combining it with `'*'`, `true`, or an omitted origin throws at construction. Reflecting whatever origin the caller sends while allowing credentials would let any site make cookie-bearing requests to your app and read the responses. With an explicit allow-list, the matched origin is echoed and `Vary: Origin` is added.
 
 ---
 
