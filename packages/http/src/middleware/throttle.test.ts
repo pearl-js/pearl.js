@@ -64,6 +64,28 @@ describe('throttle / RateLimiter', () => {
         expect(n2).toHaveBeenCalledOnce()   // ip2 has its own bucket — allowed
     })
 
+    // windowMs: 0 expires every bucket instantly (limiter silently never fires);
+    // NaN never expires it (the key is locked out for the process lifetime).
+    it.each([
+        ['windowMs: 0', { windowMs: 0, max: 5 }],
+        ['windowMs: NaN', { windowMs: Number.NaN, max: 5 }],
+        ['negative windowMs', { windowMs: -1, max: 5 }],
+        ['max: 0', { windowMs: 60_000, max: 0 }],
+        ['max: NaN', { windowMs: 60_000, max: Number.NaN }],
+    ])('rejects an unusable limit (%s)', async (_label, limit) => {
+        RateLimiter.for('bad', () => limit)
+        const { ctx } = makeCtx()
+        const next = vi.fn()
+        await expect(throttle('bad')(ctx, next)).rejects.toThrow(/must be a positive, finite number/)
+        expect(next).not.toHaveBeenCalled()
+    })
+
+    it('names the offending limiter in the validation error', async () => {
+        RateLimiter.for('login', () => ({ windowMs: 0, max: 5 }))
+        const { ctx } = makeCtx()
+        await expect(throttle('login')(ctx, vi.fn())).rejects.toThrow(/"login"/)
+    })
+
     it('honors an explicit partition key', async () => {
         RateLimiter.for('byTenant', () => ({ windowMs: 60_000, max: 1, key: 'tenant-42' }))
         const mw = throttle('byTenant')
