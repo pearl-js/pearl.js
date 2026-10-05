@@ -222,3 +222,19 @@ export type {
     SqliteConfig,
     MigratorOptions,
 } from '@pearl-framework/database'
+// ─── Cache ────────────────────────────────────────────────────────────────────
+export {
+    Cache,
+    MemoryStore,
+    RedisStore,
+    CacheRateLimitStore,
+    CacheServiceProvider,
+} from '@pearl-framework/cache'
+export type {
+    CacheOptions,
+    CacheStore,
+    MemoryStoreOptions,
+    RedisStoreOptions,
+    RedisLike,
+    CacheServiceConfig,
+} from '@pearl-framework/cache'

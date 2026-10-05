@@ -67,6 +67,7 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Authentication** | `JwtGuard`, `SessionGuard`, and `ApiTokenGuard` with pluggable user providers — protect routes in two lines |
 | **Authorization** | `Gate` for abilities/policies (`gate.define`, `allows`, `authorize`) + a `can()` middleware for route-level permission checks |
 | **Rate limiting** | `RateLimit` middleware plus named limiters — `RateLimiter.for('login', …)` and `throttle('login')` — with a pluggable store (memory default, swap in Redis for multi-process) |
+| **Cache** | `Cache` with `remember`, atomic counters, a bounded in-memory store, and a Redis store that also backs distributed rate limiting |
 | **CORS** | First-class `Cors` middleware — origin allow-list/predicate, methods, headers, credentials, and preflight handling |
 | **Cookies & sessions** | Cookie reading/writing with `HttpOnly`/`SameSite=Lax` defaults, HMAC-signed cookies, and a `session()` middleware that drives `SessionGuard` end to end |
 | **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
@@ -160,6 +161,7 @@ Pearl.js is a monorepo. Each package is independently installable from npm, or p
 | [`@pearl-framework/events`](https://www.npmjs.com/package/@pearl-framework/events) | Type-safe event dispatcher and listener system | [src](./packages/events#readme) |
 | [`@pearl-framework/queue`](https://www.npmjs.com/package/@pearl-framework/queue) | BullMQ queue, workers, retry/backoff utilities | [src](./packages/queue#readme) |
 | [`@pearl-framework/mail`](https://www.npmjs.com/package/@pearl-framework/mail) | `Mailable` classes, SMTP / SES / log / array transports, bulk send | [src](./packages/mail#readme) |
+| [`@pearl-framework/cache`](https://www.npmjs.com/package/@pearl-framework/cache) | Key/value cache with in-memory and Redis stores, plus a distributed rate-limit store | [src](./packages/cache#readme) |
 | [`@pearl-framework/cli`](https://www.npmjs.com/package/@pearl-framework/cli) | `pearl` CLI — scaffold apps, generate files, run migrations | [src](./packages/cli#readme) |
 | [`@pearl-framework/testing`](https://www.npmjs.com/package/@pearl-framework/testing) | HTTP test client, mail fakes, factories, DB helpers | [src](./packages/testing#readme) |
 

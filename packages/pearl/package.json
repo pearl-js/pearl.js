@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@pearl-framework/auth": "workspace:*",
+    "@pearl-framework/cache": "workspace:*",
     "@pearl-framework/core": "workspace:*",
     "@pearl-framework/database": "workspace:*",
     "@pearl-framework/events": "workspace:*",
