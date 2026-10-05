@@ -55,6 +55,11 @@ jobs:
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # setup-node's registry-url writes an .npmrc whose auth line expands
+          # NODE_AUTH_TOKEN, so that is the variable `npm publish` actually
+          # reads. NPM_TOKEN is kept because the changesets action consults it
+          # when deciding whether it can publish.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           # Enable npm provenance attestations on every publish
           NPM_CONFIG_PROVENANCE: 'true'
