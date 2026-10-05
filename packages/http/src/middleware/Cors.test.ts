@@ -46,12 +46,43 @@ describe('Cors', () => {
         expect(next).toHaveBeenCalledOnce()
     })
 
-    it('echoes the origin (not *) and sets credentials when credentials=true', async () => {
+    it('sets credentials alongside an explicitly allowed origin', async () => {
         const { ctx, headers } = makeCtx({ headers: { origin: 'https://app.test' } })
-        await new Cors({ credentials: true }).handle(ctx, vi.fn())
+        await new Cors({ origin: ['https://app.test'], credentials: true }).handle(ctx, vi.fn())
         expect(headers['access-control-allow-origin']).toBe('https://app.test')
         expect(headers['access-control-allow-credentials']).toBe('true')
         expect(headers['vary']).toBe('Origin')
+    })
+
+    // Reflecting an arbitrary Origin while allowing credentials lets any site
+    // read authenticated responses, so these combinations must not construct.
+    it.each([
+        ['an omitted origin', {}],
+        ['origin: "*"', { origin: '*' }],
+        ['origin: true', { origin: true }],
+    ])('refuses credentials with %s', (_label, opts) => {
+        expect(() => new Cors({ ...opts, credentials: true })).toThrow(/credentials/)
+    })
+
+    it('does not reflect a credential-less wildcard origin', async () => {
+        const { ctx, headers } = makeCtx({ headers: { origin: 'https://evil.test' } })
+        await new Cors({ origin: '*' }).handle(ctx, vi.fn())
+        expect(headers['access-control-allow-origin']).toBe('*')
+        expect(headers['access-control-allow-credentials']).toBeUndefined()
+    })
+
+    it('answers a disallowed preflight with 403, not the success status', async () => {
+        const { ctx, headers, getStatus, wasSent } = makeCtx({
+            method: 'OPTIONS',
+            headers: preflight('https://evil.test'),
+        })
+        const next = vi.fn()
+        await new Cors({ origin: ['https://ok.test'], optionsSuccessStatus: 200 }).handle(ctx, next)
+
+        expect(next).not.toHaveBeenCalled()
+        expect(wasSent()).toBe(true)
+        expect(getStatus()).toBe(403)
+        expect(headers['access-control-allow-origin']).toBeUndefined()
     })
 
     it('only allows origins in the allow-list', async () => {

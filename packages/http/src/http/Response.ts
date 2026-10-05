@@ -1,4 +1,5 @@
 import type { ServerResponse } from 'node:http'
+import { serializeCookie, signCookie, type CookieOptions } from './cookies.js'
 
 export class Response {
     private _statusCode = 200
@@ -6,8 +7,15 @@ export class Response {
         'content-type': 'application/json',
     }
     private _sent = false
+    private readonly _cookies: string[] = []
+    private readonly _cookieSecret?: string
 
-    constructor(private readonly raw: ServerResponse) {}
+    constructor(
+        private readonly raw: ServerResponse,
+        options: { cookieSecret?: string } = {},
+    ) {
+        if (options.cookieSecret !== undefined) this._cookieSecret = options.cookieSecret
+    }
 
     // ─── Status ──────────────────────────────────────────────────────────────
 
@@ -23,10 +31,62 @@ export class Response {
         return this
     }
 
+    /**
+     * Add to a comma-joined header instead of replacing it. Use this for
+     * headers that accumulate (`Vary`, `Link`); `header()` overwrites, which
+     * silently drops an earlier middleware's value.
+     */
+    appendHeader(key: string, value: string): this {
+        const k = key.toLowerCase()
+        const existing = this._headers[k]
+        if (existing === undefined || existing === '') {
+            this._headers[k] = value
+            return this
+        }
+        const present = existing.split(',').map((p) => p.trim().toLowerCase())
+        if (!present.includes(value.trim().toLowerCase())) {
+            this._headers[k] = `${existing}, ${value}`
+        }
+        return this
+    }
+
     withHeaders(headers: Record<string, string>): this {
         for (const [key, value] of Object.entries(headers)) {
         this._headers[key.toLowerCase()] = value
         }
+        return this
+    }
+
+    // ─── Cookies ─────────────────────────────────────────────────────────────
+
+    /**
+     * Queue a `Set-Cookie`. Defaults are `HttpOnly`, `SameSite=Lax`, `Path=/`;
+     * pass `secure: true` in any deployed environment.
+     *
+     * Multiple cookies accumulate — each gets its own `Set-Cookie` header, as
+     * the spec requires (comma-joining them breaks on `Expires`).
+     */
+    cookie(name: string, value: string, options: CookieOptions = {}): this {
+        let outgoing = value
+        if (options.signed) {
+            if (this._cookieSecret === undefined) {
+                throw new Error(
+                    'Response.cookie() with signed: true needs a cookie secret. ' +
+                    'Pass cookieSecret to HttpKernel.',
+                )
+            }
+            outgoing = signCookie(value, this._cookieSecret)
+        }
+        this._cookies.push(serializeCookie(name, outgoing, options))
+        return this
+    }
+
+    /**
+     * Expire a cookie. `path` and `domain` must match the values it was set
+     * with, or the browser keeps the original.
+     */
+    clearCookie(name: string, options: Omit<CookieOptions, 'maxAge' | 'expires'> = {}): this {
+        this._cookies.push(serializeCookie(name, '', { ...options, maxAge: 0 }))
         return this
     }
 
@@ -54,7 +114,10 @@ export class Response {
         if (this._sent) throw new Error('Response already sent.')
         this._sent = true
 
-        this.raw.writeHead(this._statusCode, this._headers)
+        const headers: Record<string, string | string[]> = { ...this._headers }
+        if (this._cookies.length > 0) headers['set-cookie'] = this._cookies
+
+        this.raw.writeHead(this._statusCode, headers)
         this.raw.end(body)
     }
 

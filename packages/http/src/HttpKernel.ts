@@ -21,12 +21,19 @@ export interface KernelOptions {
      * message unless the error sets an explicit `statusCode` below 500.
      */
     onUnhandledError?: (error: unknown) => void
+    /**
+     * Secret used to sign and verify cookies written with `signed: true`.
+     * Required only when you use signed cookies; keep it out of source and
+     * rotate it by accepting both secrets during the overlap.
+     */
+    cookieSecret?: string
 }
 
 export class HttpKernel {
     private readonly server: Server
     private readonly maxBodyBytes: number
     private readonly onUnhandledError?: (error: unknown) => void
+    private readonly cookieSecret?: string
     private _router: Router
 
     constructor(options: KernelOptions = {}) {
@@ -34,6 +41,9 @@ export class HttpKernel {
             this.maxBodyBytes = options.maxBodyBytes ?? 1_048_576
             if (options.onUnhandledError !== undefined) {
                 this.onUnhandledError = options.onUnhandledError
+            }
+            if (options.cookieSecret !== undefined) {
+                this.cookieSecret = options.cookieSecret
             }
             this.server = createServer(async (rawReq, rawRes) => {
             await this.handleRequest(rawReq, rawRes)
@@ -76,10 +86,15 @@ export class HttpKernel {
         rawReq: import('node:http').IncomingMessage,
         rawRes: import('node:http').ServerResponse,
     ): Promise<void> {
-        const res = new Response(rawRes)
+        const res = new Response(rawRes, {
+            ...(this.cookieSecret !== undefined && { cookieSecret: this.cookieSecret }),
+        })
 
         try {
-            const req = await Request.fromIncoming(rawReq, { maxBodyBytes: this.maxBodyBytes })
+            const req = await Request.fromIncoming(rawReq, {
+                maxBodyBytes: this.maxBodyBytes,
+                ...(this.cookieSecret !== undefined && { cookieSecret: this.cookieSecret }),
+            })
             const ctx = new HttpContext(req, res)
 
             const match = this._router.match(req.method, req.path)

@@ -8,10 +8,16 @@ export interface Limit {
     windowMs: number
     /** Max requests allowed per key within the window. */
     max: number
-    /** Partition key — defaults to the client IP. Use it to limit per-user, per-tenant, etc. */
-    key?: string
+    /**
+     * Partition key. Use it to limit per-user, per-tenant, etc.
+     *
+     * Defaults to `socket.remoteAddress`. Behind a reverse proxy that address
+     * is the proxy's, so every caller shares one bucket — derive the key from
+     * `x-forwarded-for` yourself when you run behind a proxy you control.
+     */
+    key?: string | undefined
     /** Override the 429 response body. */
-    message?: string
+    message?: string | undefined
 }
 
 export type LimitResolver = (ctx: HttpContext) => Limit
@@ -21,11 +27,36 @@ function clientIp(ctx: HttpContext): string {
 }
 
 /**
+ * Reject limits the store cannot act on. `windowMs: 0` makes every bucket
+ * expire instantly (the limiter silently never fires) and `NaN` makes it never
+ * expire (the key is locked out for the process lifetime), so both fail loudly
+ * here instead.
+ */
+function assertValidLimit(name: string, limit: Limit): void {
+    if (!Number.isFinite(limit.windowMs) || limit.windowMs <= 0) {
+        throw new Error(
+            `Rate limiter "${name}": windowMs must be a positive, finite number ` +
+            `(got ${String(limit.windowMs)})`,
+        )
+    }
+    if (!Number.isFinite(limit.max) || limit.max <= 0) {
+        throw new Error(
+            `Rate limiter "${name}": max must be a positive, finite number ` +
+            `(got ${String(limit.max)})`,
+        )
+    }
+}
+
+/**
  * Registry of named rate limiters (Laravel-style).
  *
  *   RateLimiter.useStore(redisStore)                       // optional, defaults to in-memory
  *   RateLimiter.for('login', () => ({ windowMs: 15 * 60_000, max: 5 }))
- *   RateLimiter.for('api', (ctx) => ({ windowMs: 60_000, max: 60, key: ctx.get('auth.user')?.id }))
+ *   RateLimiter.for('api', (ctx) => ({
+ *     windowMs: 60_000,
+ *     max: 60,
+ *     key: ctx.get<{ id: number }>('auth.user')?.id?.toString(),
+ *   }))
  *
  * Then apply per route with the `throttle()` middleware.
  */
@@ -73,6 +104,7 @@ export function throttle(name: string): MiddlewareFn {
         }
 
         const limit = resolver(ctx)
+        assertValidLimit(name, limit)
         const store = RateLimiter.currentStore
         const bucketKey = `${name}:${limit.key ?? clientIp(ctx)}`
 

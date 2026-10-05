@@ -10,6 +10,7 @@
   "fixed": [
     [
       "@pearl-framework/auth",
+      "@pearl-framework/cache",
       "@pearl-framework/cli",
       "@pearl-framework/core",
       "@pearl-framework/database",

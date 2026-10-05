@@ -196,16 +196,40 @@ function buildSecurityImports(sel: Selection): { imports: string[]; registers: s
   return { imports, registers }
 }
 
-function serverTs(sel: Selection): string {
+function bootstrapTs(sel: Selection): string {
   const { imports: provImports, registers: provRegisters } = buildProviderImports(sel)
-  const { imports: secImports, registers: secRegisters } = buildSecurityImports(sel)
   const head = [
     `import 'dotenv/config'`,
     `import { Application } from '@pearl-framework/core'`,
-    `import { Router, HttpKernel } from '@pearl-framework/http'`,
     ...provImports,
-    ...secImports,
     `import { AppServiceProvider } from './providers/AppServiceProvider.js'`,
+  ].join('\n')
+
+  return `${head}
+
+/**
+ * Registers every provider and boots the container WITHOUT starting a server.
+ *
+ * The CLI loads this for commands that need your configuration —
+ * \`pearl migrate\`, \`pearl db:seed\`, \`pearl queue:work\` — so keep provider
+ * registration here rather than in the entrypoint.
+ */
+export async function bootstrap(): Promise<Application> {
+  const app = new Application({ root: import.meta.dirname })
+${provRegisters.map((r) => `  ${r}`).join('\n')}
+  app.register(AppServiceProvider)
+  await app.boot()
+  return app
+}
+`
+}
+
+function serverTs(sel: Selection): string {
+  const { imports: secImports, registers: secRegisters } = buildSecurityImports(sel)
+  const head = [
+    `import { Router, HttpKernel } from '@pearl-framework/http'`,
+    ...secImports,
+    `import { bootstrap } from './bootstrap.js'`,
   ].join('\n')
 
   const middlewareBlock = secRegisters.length
@@ -214,10 +238,7 @@ function serverTs(sel: Selection): string {
 
   return `${head}
 
-const app = new Application({ root: import.meta.dirname })
-${provRegisters.join('\n')}
-app.register(AppServiceProvider)
-await app.boot()
+const app = await bootstrap()
 
 const router = new Router()
 ${middlewareBlock}
@@ -241,25 +262,17 @@ console.log(\`\\nPearl.js running on http://localhost:\${port}\\n\`)
 }
 
 function workerTs(sel: Selection): string {
-  const { imports, registers } = buildProviderImports(sel)
-  const head = [
-    `import 'dotenv/config'`,
-    `import { Application } from '@pearl-framework/core'`,
-    ...imports,
-    `import { AppServiceProvider } from './providers/AppServiceProvider.js'`,
-  ].join('\n')
+  void sel
+  return `import { bootstrap } from './bootstrap.js'
 
-  return `${head}
-
-const app = new Application({ root: import.meta.dirname })
-${registers.join('\n')}
-app.register(AppServiceProvider)
-await app.boot()
+const app = await bootstrap()
 
 console.log('Pearl.js worker running. Press Ctrl+C to stop.')
 
 const shutdown = async (signal: string) => {
   console.log(\`\\nReceived \${signal}, shutting down...\`)
+  // Lets each provider close its connections instead of dropping them.
+  await app.terminate()
   process.exit(0)
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'))
@@ -274,6 +287,24 @@ function entryTs(sel: Selection): string {
 }
 
 // ─── Security middleware templates ───────────────────────────────────────
+
+const databaseSeeder = `import type { Application } from '@pearl-framework/core'
+import { DatabaseManager } from '@pearl-framework/database'
+
+/**
+ * Seeder run by \`pearl db:seed\`.
+ *
+ * Export \`run(app)\` (or a default function). The app handed to you is already
+ * booted, so resolve whatever you need from its container.
+ */
+export async function run(app: Application): Promise<void> {
+  const db = app.container.make(DatabaseManager)
+  void db
+
+  // await db.adapter.db.insert(users).values([{ email: 'admin@example.com' }])
+  console.log('  DatabaseSeeder: nothing to seed yet')
+}
+`
 
 const rateLimitMw = `import { RateLimit } from '@pearl-framework/http'
 
@@ -504,7 +535,7 @@ function appDirs(sel: Selection): string[] {
     dirs.push('src/controllers', 'src/middleware')
   }
   if (sel.modules.has('database')) {
-    dirs.push('src/models', 'src/schema', 'database/migrations')
+    dirs.push('src/models', 'src/schema', 'database/migrations', 'database/seeders')
   }
   if (sel.modules.has('queue'))    dirs.push('src/jobs')
   if (sel.modules.has('mail'))     dirs.push('src/mail')
@@ -740,11 +771,13 @@ export function newApp(program: Command): void {
         ['.env.example',                        envExample(name, sel)],
         ['.gitignore',                          gitignore],
         [entryFile,                             entryTs(sel)],
+        ['src/bootstrap.ts',                    bootstrapTs(sel)],
         ['src/providers/AppServiceProvider.ts', appProviderTs],
         ['vitest.config.ts',                    vitestConfig],
         ['tests/example.test.ts',               exampleTest(sel)],
       ]
 
+      if (sel.modules.has('database'))         files.push(['database/seeders/DatabaseSeeder.ts', databaseSeeder])
       if (sel.security.has('rateLimit'))       files.push(['src/middleware/RateLimit.ts',       rateLimitMw])
       if (sel.security.has('cors'))            files.push(['src/middleware/Cors.ts',            corsMw])
       if (sel.security.has('securityHeaders')) files.push(['src/middleware/SecurityHeaders.ts', securityHeadersMw])

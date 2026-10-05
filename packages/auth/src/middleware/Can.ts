@@ -17,13 +17,13 @@ import type { Gate } from '../Gate.js'
 export function can<TUser>(
     gate: Gate<TUser>,
     ability: string,
-    argResolver?: (ctx: HttpContext) => unknown,
+    argResolver?: (ctx: HttpContext) => unknown | Promise<unknown>,
 ): MiddlewareFn {
     return async (ctx: HttpContext, next: NextFn): Promise<void> => {
         const user = (ctx.get('auth.user') ?? null) as TUser | null
 
         const allowed = argResolver
-            ? await gate.allows(ability, user, argResolver(ctx))
+            ? await gate.allows(ability, user, await argResolver(ctx))
             : await gate.allows(ability, user)
 
         if (!allowed) {

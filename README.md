@@ -67,8 +67,10 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Authentication** | `JwtGuard`, `SessionGuard`, and `ApiTokenGuard` with pluggable user providers — protect routes in two lines |
 | **Authorization** | `Gate` for abilities/policies (`gate.define`, `allows`, `authorize`) + a `can()` middleware for route-level permission checks |
 | **Rate limiting** | `RateLimit` middleware plus named limiters — `RateLimiter.for('login', …)` and `throttle('login')` — with a pluggable store (memory default, swap in Redis for multi-process) |
+| **Cache** | `Cache` with `remember`, atomic counters, a bounded in-memory store, and a Redis store that also backs distributed rate limiting |
 | **CORS** | First-class `Cors` middleware — origin allow-list/predicate, methods, headers, credentials, and preflight handling |
 | **OpenAPI** | `GET /openapi.json` and Swagger UI derived from your routes and `FormRequest` schemas — no hand-maintained spec to drift |
+| **Cookies & sessions** | Cookie reading/writing with `HttpOnly`/`SameSite=Lax` defaults, HMAC-signed cookies, and a `session()` middleware that drives `SessionGuard` end to end |
 | **Database** | Drizzle ORM via `DrizzleAdapter` — Postgres, MySQL, and SQLite with auto-migrations |
 | **Validation** | Zod-powered `FormRequest` classes that throw typed `ValidationException` / `AuthorizationException` |
 | **Mail** | `Mailable` classes with SMTP, SES, log, and array transports — plus bounded-concurrency `sendBulk` |
@@ -76,7 +78,7 @@ await new HttpKernel().useRouter(router).listen(3000)
 | **Queues** | BullMQ-backed job queue with delay, retry, and backoff. Standalone `retryWith` + backoff helpers for one-off async ops |
 | **IoC Container** | Lightweight service container — bind, singleton, instance, scope. Frozen after boot |
 | **Testing** | HTTP test client, mail fakes, data factories, and transaction-wrapped DB helpers |
-| **CLI** | Scaffold projects and generate controllers, middleware, jobs, mailables, and more |
+| **CLI** | Scaffold projects, generate controllers/middleware/jobs/mailables, and run `migrate`, `db:seed`, `queue:work` |
 
 ---
 
@@ -154,13 +156,14 @@ Pearl.js is a monorepo. Each package is independently installable from npm, or p
 | [`@pearl-framework/openapi`](https://www.npmjs.com/package/@pearl-framework/openapi) | OpenAPI 3.1 document and Swagger UI generated from the route table | [src](./packages/openapi#readme) |
 | [`@pearl-framework/pearl`](https://www.npmjs.com/package/@pearl-framework/pearl) | Meta-package — re-exports every public API | [src](./packages/pearl#readme) |
 | [`@pearl-framework/core`](https://www.npmjs.com/package/@pearl-framework/core) | Application bootstrap, IoC container, service providers, config, env | [src](./packages/core#readme) |
-| [`@pearl-framework/http`](https://www.npmjs.com/package/@pearl-framework/http) | Router, kernel, request/response, middleware pipeline, rate limiting | [src](./packages/http#readme) |
+| [`@pearl-framework/http`](https://www.npmjs.com/package/@pearl-framework/http) | Router, kernel, request/response, cookies, middleware pipeline, rate limiting | [src](./packages/http#readme) |
 | [`@pearl-framework/auth`](https://www.npmjs.com/package/@pearl-framework/auth) | JWT, session, and API token guards plus `Authenticate` middleware and scrypt hashing | [src](./packages/auth#readme) |
 | [`@pearl-framework/database`](https://www.npmjs.com/package/@pearl-framework/database) | ORM-agnostic adapter pattern with Drizzle as the default | [src](./packages/database#readme) |
 | [`@pearl-framework/validate`](https://www.npmjs.com/package/@pearl-framework/validate) | `FormRequest`, Zod-backed validation, typed validation/authorization exceptions | [src](./packages/validate#readme) |
 | [`@pearl-framework/events`](https://www.npmjs.com/package/@pearl-framework/events) | Type-safe event dispatcher and listener system | [src](./packages/events#readme) |
 | [`@pearl-framework/queue`](https://www.npmjs.com/package/@pearl-framework/queue) | BullMQ queue, workers, retry/backoff utilities | [src](./packages/queue#readme) |
 | [`@pearl-framework/mail`](https://www.npmjs.com/package/@pearl-framework/mail) | `Mailable` classes, SMTP / SES / log / array transports, bulk send | [src](./packages/mail#readme) |
+| [`@pearl-framework/cache`](https://www.npmjs.com/package/@pearl-framework/cache) | Key/value cache with in-memory and Redis stores, plus a distributed rate-limit store | [src](./packages/cache#readme) |
 | [`@pearl-framework/cli`](https://www.npmjs.com/package/@pearl-framework/cli) | `pearl` CLI — scaffold apps, generate files, run migrations | [src](./packages/cli#readme) |
 | [`@pearl-framework/testing`](https://www.npmjs.com/package/@pearl-framework/testing) | HTTP test client, mail fakes, factories, DB helpers | [src](./packages/testing#readme) |
 
@@ -186,7 +189,18 @@ pearl make:listener    SendWelcomeEmail --event UserRegistered
 pearl make:mailable    WelcomeMail
 pearl make:model       Post --migration
 pearl make:migration   create_posts_table
+
+# Database
+pearl migrate                              # run migrations
+pearl db:seed                              # run database/seeders/*
+pearl db:seed --class DatabaseSeeder
+
+# Queue
+pearl queue:work                           # process jobs until stopped
+pearl queue:work --queue mail --concurrency 5
 ```
+
+`migrate`, `db:seed`, and `queue:work` load `src/bootstrap.ts` to read your configuration — see the [CLI reference](./packages/cli#readme) for the convention.
 
 ---
 
@@ -196,6 +210,7 @@ pearl make:migration   create_posts_table
 my-app/
 ├── src/
 │   ├── server.ts                    ← entry point
+│   ├── bootstrap.ts                 ← registers providers; loaded by the CLI
 │   ├── providers/
 │   │   └── AppServiceProvider.ts    ← register your bindings here
 │   ├── controllers/
@@ -207,7 +222,8 @@ my-app/
 │   ├── mail/
 │   └── middleware/
 ├── database/
-│   └── migrations/
+│   ├── migrations/
+│   └── seeders/                      ← run with `pearl db:seed`
 ├── tests/
 ├── .env                              ← auto-created, auto-loaded by Application.boot()
 └── package.json

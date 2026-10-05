@@ -21,6 +21,13 @@ export type { AuthMiddlewareOptions } from './middleware/Authenticate.js'
 export { Gate, AccessDeniedError } from './Gate.js'
 export type { Ability } from './Gate.js'
 export { can } from './middleware/Can.js'
+export {
+    session,
+    startSession,
+    endSession,
+    rotateSessionCookie,
+} from './middleware/SessionCookie.js'
+export type { SessionCookieOptions } from './middleware/SessionCookie.js'
 
 // Service Provider
 export { AuthServiceProvider } from './providers/AuthServiceProvider.js'

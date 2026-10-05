@@ -61,6 +61,28 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@20.19.33)(jiti@2.6.1)(tsx@4.21.0)
 
+  packages/cache:
+    dependencies:
+      '@pearl-framework/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@pearl-framework/http':
+        specifier: workspace:*
+        version: link:../http
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.33
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.9.3
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.6(@types/node@20.19.33)(jiti@2.6.1)(tsx@4.21.0)
+
   packages/cli:
     dependencies:
       '@inquirer/prompts':
@@ -85,6 +107,9 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.6(@types/node@20.19.33)(jiti@2.6.1)(tsx@4.21.0)
 
   packages/core:
     devDependencies:
@@ -231,6 +256,9 @@ importers:
       '@pearl-framework/auth':
         specifier: workspace:*
         version: link:../auth
+      '@pearl-framework/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@pearl-framework/core':
         specifier: workspace:*
         version: link:../core
