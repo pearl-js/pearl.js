@@ -13,6 +13,9 @@ import {
 import { newApp } from './commands/new.js'
 import { serve } from './commands/serve.js'
 import { listCommands } from './commands/list.js'
+import { migrate } from './commands/migrate.js'
+import { dbSeed } from './commands/seed.js'
+import { queueWork } from './commands/queueWork.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -29,6 +32,10 @@ program
 newApp(program)
 serve(program)
 listCommands(program)
+
+migrate(program)
+dbSeed(program)
+queueWork(program)
 
 makeController(program)
 makeModel(program)

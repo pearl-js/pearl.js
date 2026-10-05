@@ -91,6 +91,76 @@ The command looks for `src/server.ts` first, then falls back to `src/main.ts`.
 
 ---
 
+## Commands that boot your app
+
+`pearl migrate`, `pearl db:seed`, and `pearl queue:work` need your configuration, so they load `src/bootstrap.ts` — the module that registers providers and boots the container without starting a server. Projects from `pearl new` already have one; an older project needs it added:
+
+```typescript
+// src/bootstrap.ts
+import 'dotenv/config'
+import { Application } from '@pearl-framework/core'
+import { DatabaseServiceProvider } from '@pearl-framework/database'
+import { AppServiceProvider } from './providers/AppServiceProvider.js'
+
+export async function bootstrap(): Promise<Application> {
+  const app = new Application({ root: import.meta.dirname })
+  app.register(DatabaseServiceProvider)
+  app.register(AppServiceProvider)
+  await app.boot()
+  return app
+}
+```
+
+Then have `src/server.ts` call it instead of booting inline. Each command runs the app in a child process via `tsx`, resolving imports against your project's own `node_modules`.
+
+### `pearl migrate`
+
+Runs migrations through the `Migrator` for whichever ORM your adapter uses.
+
+```bash
+pearl migrate
+pearl migrate --folder database/migrations   # default
+```
+
+There is no `migrate:rollback`: Drizzle — the default adapter — generates no down migrations, so a rollback command would be a no-op for most projects. Roll back with a new forward migration.
+
+### `pearl db:seed`
+
+Runs every file in `database/seeders`, alphabetically.
+
+```bash
+pearl db:seed
+pearl db:seed --class DatabaseSeeder   # one file, by name
+pearl db:seed --dir database/seeds     # different directory
+```
+
+A seeder exports `run(app)` (or a default function) and receives the booted application:
+
+```typescript
+// database/seeders/DatabaseSeeder.ts
+import type { Application } from '@pearl-framework/core'
+import { DatabaseManager } from '@pearl-framework/database'
+
+export async function run(app: Application): Promise<void> {
+  const db = app.container.make(DatabaseManager)
+  await db.adapter.db.insert(users).values([{ email: 'admin@example.com' }])
+}
+```
+
+### `pearl queue:work`
+
+Processes queued jobs until stopped. Every class extending `Job` exported from `src/jobs` is registered automatically.
+
+```bash
+pearl queue:work
+pearl queue:work --queue mail --concurrency 5
+pearl queue:work --jobs-dir src/queue/jobs
+```
+
+Connection settings come from your `queue` config, falling back to `REDIS_HOST`/`REDIS_PORT`. `SIGINT`/`SIGTERM` drains in-flight jobs before exiting; a second signal exits immediately. The command refuses to start with an empty job directory rather than running a worker that fails every job it receives.
+
+---
+
 ## Generators
 
 All generators create files in the conventional location. Use `--force` to overwrite an existing file.
